@@ -1,0 +1,17 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Assemblies
+/*/*/bin/
+/*/*/obj/
+/Doc/tutorial.aux
+/Doc/tutorial.bbl
+/Doc/tutorial.blg
+/Doc/tutorial.log
+/Doc/tutorial.out
+/Doc/tutorial.pdf
+/Documentation/Tutorial.pdf
+/Join.opensdf
+/Join.sdf
+/Join.v12.suo
