@@ -5,6 +5,8 @@
 /Assemblies
 /*/*/bin/
 /*/*/obj/
+/Doc/Debug/*
+/Doc/Release/*
 /Doc/tutorial.aux
 /Doc/tutorial.bbl
 /Doc/tutorial.blg
