@@ -154,6 +154,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".GIT", ".GIT", "{6073BBB2-8
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp", "Samples\FSharp\FSharp.fsproj", "{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -925,6 +927,36 @@ Global
 		{2BBD3133-FC3C-4716-9037-2A554A80012C}.Setup|Mixed Platforms.Build.0 = Release|Any CPU
 		{2BBD3133-FC3C-4716-9037-2A554A80012C}.Setup|Win32.ActiveCfg = Release|Any CPU
 		{2BBD3133-FC3C-4716-9037-2A554A80012C}.Setup|x86.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Dev|Any CPU.Build.0 = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Dev|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Dev|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Dev|Win32.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Dev|x86.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Documentation|Any CPU.Build.0 = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Documentation|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Documentation|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Documentation|Win32.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Documentation|x86.ActiveCfg = Debug|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Release|Win32.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Release|x86.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Setup|Any CPU.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Setup|Any CPU.Build.0 = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Setup|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Setup|Mixed Platforms.Build.0 = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Setup|Win32.ActiveCfg = Release|Any CPU
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8}.Setup|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -953,5 +985,6 @@ Global
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C} = {74402C97-6458-4B8E-9DA6-DCF5DF6C6884}
 		{484E6EEE-3D70-483B-A239-1167A0C88307} = {74402C97-6458-4B8E-9DA6-DCF5DF6C6884}
 		{2BBD3133-FC3C-4716-9037-2A554A80012C} = {74402C97-6458-4B8E-9DA6-DCF5DF6C6884}
+		{E180A1D7-8B88-4600-9EB4-96E9FAE7B7F8} = {BFF37688-E2D8-424B-8EA9-32328F0837B9}
 	EndGlobalSection
 EndGlobal
