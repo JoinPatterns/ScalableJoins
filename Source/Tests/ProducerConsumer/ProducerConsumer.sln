@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProducerConsumer", "ProducerConsumer.csproj", "{253B3D57-F8C5-424D-AACF-55989CEA688E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PseudoJoins", "..\..\Src\PseudoJoins\PseudoJoins.csproj", "{6337EF76-989D-4F38-8CE9-691D87CF428C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		ProducerConsumer|Any CPU = ProducerConsumer|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{253B3D57-F8C5-424D-AACF-55989CEA688E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{253B3D57-F8C5-424D-AACF-55989CEA688E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{253B3D57-F8C5-424D-AACF-55989CEA688E}.ProducerConsumer|Any CPU.ActiveCfg = ProducerConsumer|Any CPU
+		{253B3D57-F8C5-424D-AACF-55989CEA688E}.ProducerConsumer|Any CPU.Build.0 = ProducerConsumer|Any CPU
+		{253B3D57-F8C5-424D-AACF-55989CEA688E}.Release|Any CPU.ActiveCfg = Release|x86
+		{253B3D57-F8C5-424D-AACF-55989CEA688E}.Release|Any CPU.Build.0 = Release|x86
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.ProducerConsumer|Any CPU.ActiveCfg = ProducerConsumer|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.ProducerConsumer|Any CPU.Build.0 = ProducerConsumer|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

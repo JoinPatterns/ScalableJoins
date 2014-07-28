@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PseudoJoins", "..\..\Src\PseudoJoins\PseudoJoins.csproj", "{6337EF76-989D-4F38-8CE9-691D87CF428C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barrier", "Barrier.csproj", "{3546E009-6622-43C7-80C2-856A83FA6530}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		ProducerConsumer|Any CPU = ProducerConsumer|Any CPU
+		ProducerConsumer|x86 = ProducerConsumer|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Debug|x86.Build.0 = Debug|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.ProducerConsumer|Any CPU.ActiveCfg = ProducerConsumer|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.ProducerConsumer|Any CPU.Build.0 = ProducerConsumer|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.ProducerConsumer|x86.ActiveCfg = ProducerConsumer|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Release|x86.ActiveCfg = Release|Any CPU
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Release|x86.Build.0 = Release|Any CPU
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Debug|x86.ActiveCfg = Debug|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Debug|x86.Build.0 = Debug|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.ProducerConsumer|Any CPU.ActiveCfg = Debug|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.ProducerConsumer|Any CPU.Build.0 = Debug|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.ProducerConsumer|x86.ActiveCfg = Release|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Release|Any CPU.ActiveCfg = Release|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Release|Any CPU.Build.0 = Release|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Release|x86.ActiveCfg = Release|x86
+		{3546E009-6622-43C7-80C2-856A83FA6530}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = ..\..\Src\PseudoJoins\PseudoJoins.csproj
+	EndGlobalSection
+EndGlobal

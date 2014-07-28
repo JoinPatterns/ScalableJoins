@@ -1,0 +1,1122 @@
+% to produce html, use htlatex ...
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{listings}
+
+\usepackage{color}
+\usepackage{listings}
+\definecolor{StringRed}{rgb}{.637,0.082,0.082}
+\definecolor{CommentGreen}{rgb}{0,0.5,0}
+\definecolor{KeywordBlue}{rgb}{0,0,1}
+
+\lstnewenvironment{lstcsharp}
+{\lstset{language=[Sharp]C,
+frame=single,
+keywordstyle={},
+basicstyle=\ttfamily\small,
+columns=fixed,
+keywordstyle=\color{KeywordBlue}\bfseries,
+commentstyle=\color{CommentGreen}\emph,
+stringstyle=\color{StringRed},
+emph={Asynchronous,Synchronous,Channel,When,Initialize,And,Do,Create,Join,OneWay,Microsoft,Research,Joins,lock},emphstyle=\emph}}
+{}
+
+\lstnewenvironment{lstcomega}
+{\lstset{language=[Sharp]C,
+frame=shadowbox,rulesepcolor=\color{black},
+keywordstyle={},
+basicstyle=\ttfamily\small,
+columns=fixed,
+emph={async,when},emphstyle=\underbar,
+literate={&}{{\underbar{\&}}}{1}}
+}
+{}
+
+
+\usepackage{a4wide}
+\newcommand{\maxbindings}{16}
+\newcommand{\comega}{\texorpdfstring{\mbox{C$\omega$}}{C{omega}}}
+\newcommand{\csharp}{\texorpdfstring{\mbox{C$^\#$}}{C\#}}
+\newcommand{\vb}{\mbox{VB}}
+\newcommand{\demo}[1]{\texorpdfstring{{(\texttt{Demos{\symbol{92}}#1})}}{}}
+\newcommand{\sample}[1]{\texorpdfstring{{(\texttt{Samples{\symbol{92}}#1})}}{}}
+\newcommand{\sjoins}{{\texttt{Scalable Joins}}}
+\newcommand{\joins}{{\texttt{Joins}}}
+\newcommand{\cjoin}{{\texttt{Join}}}
+\newcommand{\minitialize}{{\texttt{Initialize}}}
+\newcommand{\mcreate}{{\texttt{Create}}}
+\newcommand{\mwhen}{{\texttt{When}}}
+\newcommand{\mand}{{\texttt{And}}}
+\newcommand{\mdo}{{\texttt{Do}}}
+\newcommand{\psize}{{\texttt{Size}}}
+\newcommand{\pcount}{{\texttt{Count}}}
+
+\newcommand{\dasync}{{\texttt{Asynchronous.Channel}}}
+\newcommand{\dasyncA}[1]{{\texttt{Asynchronous.Channel<}#1\texttt{>}}}
+\newcommand{\dsyncvoidA}[1]{{\texttt{Synchronous.Channel<}#1\texttt{>}}}
+\newcommand{\dsyncvoid}{{\texttt{Synchronous.Channel}}}
+\newcommand{\dsyncR}[1]{{\texttt{Synchronous<}#1\texttt{>.Channel}}}
+\newcommand{\dsyncRA}[2]{{\texttt{Synchronous<}#1\texttt{>.Channel<}#2\texttt{>}}}
+\newcommand{\cpair}[2]{{\texttt{Pair<}#1,#2\texttt{>}}}
+\newcommand{\dlongreturn}[2]{{\texttt{Func<}#2\texttt{,}#1\texttt{>}}}
+\newcommand{\dlongreturnvoid}[1]{{\texttt{Action<}#1\texttt{>}}}
+\newcommand{\dreturn}[2]{{\texttt{Continuation}}}
+\newcommand{\dreturnvoid}[1]{{\texttt{Continuation}}}
+
+
+\newcommand{\typeref}[1]{{\texttt{#1}}}
+\newcommand{\methodref}[1]{{\texttt{#1}}}
+\newcommand{\dotwhen}{\texttt{.When}}
+\newcommand{\dotand}{\texttt{.And}}
+\newcommand{\dotinitialize}{\texttt{.Initialize}}
+\newcommand{\dotdo}{\texttt{.Do}}
+\newcommand{\dotsize}{\texttt{.Size}}
+\newcommand{\dotcount}{\texttt{.Count}}
+\newcommand{\joindotcreate}{\texttt{Join.Create}}
+\newcommand{\When}{\texttt{When}}
+\newcommand{\And}{\texttt{And}}
+\newcommand{\AndPair}{\texttt{AndPair}}
+\newcommand{\Initialize}{\texttt{Initialize}}
+\newcommand{\Do}{\texttt{Do}}
+\newcommand{\channel}{\ensuremath{c}}
+\newcommand{\joinobj}{\ensuremath{j}}
+\newcommand{\delegate}{\ensuremath{d}}
+\newcommand{\delegatekw}{\texttt{delegate}}
+\newcommand{\tvara}{\ensuremath{A}}
+\newcommand{\tvarb}{\ensuremath{B}}
+\newcommand{\tvarr}{\ensuremath{R}}
+\newcommand{\tvarp}{\ensuremath{R}}
+\newcommand{\out}{\ensuremath{\texttt{out}}}
+
+\title{\sjoins\ \\
+       A library for scalable, declarative parallel coordination}
+\author{Claudio Russo
+\\{\makeatother \texttt{crusso@microsoft.com}}
+\\    Microsoft Research Ltd, 7JJ Thomson Ave, Cambridge, United Kingdom}
+\bibliographystyle{plain}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+\sjoins\ is a re-implementation of the \joins\ concurrency library, designed to provide scalable performance on parallel hardware.
+It is largely drop-in replacement the original library, providing good source (but not binary) compatibility.
+
+\sjoins\ actually incorporates two implementations of join patterns. The first, default implementation, is a 
+scalable implementation that uses ``lock-free'' techniques as described in the accompanying paper.
+The second is a slightly extended, lock-based implementation along the lines of the original \joins\ implementation.
+
+Both implementations extend the original one with support for \emph{rendezvous} - allowing more than one synchronous channel (of the same return type) to occur in a pattern.
+Which flavour of implementation to use can be specified on a per-object basis by passing an (optional) type parameter to the \joindotcreate\ factory method (see below).
+
+While the original \joins\ library had built-in support for distribution via \emph{Remoting}, this feature has been
+removed from the current implementation to avoid unnessary overhead. It could easily be added back in.
+
+The purpose of this to document is to provide a tutorial introduction to the \sjoins\ library. 
+% We start with a brief introduction to \comega\ since it
+% remains attractive and is somewhat simpler to understand.  We then
+% show how to re-express the \comega\ programs as vanilla \csharp\ 2.0 code that references
+% the \joins\ library.
+
+Section \ref{joins} introduces the \sjoins\ library by example.
+Section \ref{joinsref} provides a concise, yet precise, description of the \sjoins\ library, as a reference manual.
+Section \ref{tutorials} presents tutorial applications of join patterns using \sjoins\ code.
+Section \ref{demos} gives a brief overview the larger demos provided with the \sjoins\ distribution.
+
+Readers interested in the actual implementation should read the draft paper (included in the distribution) 
+(also available here: \url{http://research.microsoft.com/~{}crusso/papers/scalablejoins.pdf}.)
+
+\section{Background}
+
+The \cjoin\ class provides a mostly declarative, type-safe mechanism for
+defining thread-safe asynchronous and synchronous
+communication channels and patterns, for use by
+by threads executing either concurrently or in parallel.
+The communication "channels" are special delegate values
+obtained from a common join object. Communication and/or
+synchronization takes place by invoking these delegates,
+passing arguments and optionally waiting for replied
+return values.  The allowable communication patterns as
+well as their effects are declared using join patterns:
+bodies of code whose execution is guarded by linear
+combinations of channels. The body, or continuation, of a
+join pattern is provided by the user as a delegate that
+may manipulate external resources protected by the join
+object.
+
+
+Here is the simplest interesting example of a \joins\ class:
+
+\begin{lstcsharp}
+using Microsoft.Research.Joins;
+public class Buffer {
+  // Declare the (a)synchronous channels
+  public readonly Asynchronous.Channel<string> Put;
+  public readonly Synchronous<string>.Channel Get;
+  public Buffer() {
+    // Allocate a new Join object for this buffer
+    Join join = Join.Create();
+    // Use it to initialize the channels
+    join.Initialize(out Put);  
+    join.Initialize(out Get);
+    // Finally, declare the patterns(s)
+    join.When(Get).And(Put).Do(delegate(string s) {
+       return s; 
+    });
+  }
+}
+\end{lstcsharp}
+
+The code declares a buffer class with two fields of special delegate
+types. The \verb+Put+ field contains an asynchronous channel of type \verb+Asynchronous.Channel<string>+ whose
+delegate \verb+Invoke+ method takes a string argument and returns void (immediately).
+The \verb+Get+ field contains contains a synchronous channel of type \verb+Synchronous<string>.Channel+ whose
+delegate \verb+Invoke+ method returns a string but takes no argument.  Both
+fields are initially \verb+null+.  The constructor allocates a new \cjoin\
+object, \verb+join+, using the factory method \mcreate. The \verb+join+ object is a private scheduler
+for the buffer.  The constructor then calls \minitialize\ on \verb+join+, passing the
+locations of each of the channels: this assigns two new delegate
+values into the fields, each obtained from the \verb+join+ object.\footnote{
+The \minitialize\ method is both generic and overloaded: it takes an
+{\tt out} parameter just so that we can use it for different channel
+types and still rely on \csharp's and \vb's type inference to avoid
+specifying type arguments.}  Finally we declare 
+a \emph{join pattern} on the \verb+join+ object, passing the synchronous
+channel \verb+Get+\ to \mwhen\, and {\mand}ing it with the
+asynchronous channel \verb+Put+.  The pattern is completed by
+invoking \mdo, passing the continuation for this pattern, expressed
+here as an anonymous delegate. The continuation expects exactly one
+argument (the argument to \verb+Put+); the continuation's return value
+is returned to the caller of \verb+Get+. 
+
+Now assume that producer and consumer threads wish to communicate via
+an instance \verb|b| of the class \verb|Buffer|. Producers make calls
+to \verb|b.Put(s)|, which, since the channel is asynchronous, never
+block. Consumers make calls to \verb|b.Get()|, which, since the method
+is synchronous, will block until or unless there is a matching call to
+\verb|Put(s)|. Once \verb|b| has received both a \verb|Put(s)| and a
+\verb|Get()|, the body runs and the argument to the \verb|Put(s)| is
+returned as the result of the call to \verb|Get()|. Multiple calls to
+\verb|Get()| may be pending before a \verb|Put(s)| is received to
+reawaken one of them, and multiple calls to \verb|Put(s)| may be made
+before their arguments are consumed by subsequent \verb|Get()|s. Note
+that:
+\begin{enumerate}
+\item The body of the pattern runs in the (reawakened) thread
+corresponding to the matched call to \verb|Get()|. Hence no new threads are
+spawned in this example.
+\item The code which is exectuted is
+completely thread safe. The library does the synchronization to ensures
+that, for example, the argument to a
+particular call of \verb|Put(s)| cannot be delivered to two distinct calls to
+\verb|Get()|. 
+\item The reader may wonder how we know which of the channels involved
+in a pattern gets the returned value (or exception).
+The answer is every synchronous channel - there may be several in a pattern.
+\end{enumerate}
+
+
+In general, a channel
+may appear in more than one pattern, each of which defines a body which
+can run when the channel has been filled \emph{and} a particular set of
+messages are present. For example, we could modify the
+example above to allow \verb|Get()| to synchronize with calls to
+either of two different \verb|PutString(s)| and \verb|PutInt(n)| methods:
+
+\begin{lstcsharp}
+class BufferTwo {
+  public readonly Asynchronous.Channel<string> PutString;
+  public readonly Asynchronous.Channel<int> PutInt;
+  public readonly Synchronous<string>.Channel Get;
+  public Buffer() { 
+    Join join = Join.Create();
+    join.Initialize(out PutString);  
+    join.Initialize(out PutInt);  
+    join.Initialize(out Get);
+    join.When(Get).And(PutString).Do(delegate(string s) {
+       return s; 
+    });
+    join.When(Get).And(PutInt).Do(delegate(int n) {
+       return n.ToString(); 
+    });
+  }
+}
+\end{lstcsharp}
+
+Now we have two asynchronous channels  and a synchronous channel which
+can synchronize with either one, with a different body in each case.
+
+\subsection{Example: A One-place Buffer}\label{sect:cwoneplacebuffer}
+The previous example showed how to define a buffer of unbounded size:
+any number of calls to \verb|Put(s)| could be queued up before matching a
+\verb|Get()|. We now define a variant in which only a single data value may
+held in the buffer at any one time:
+\begin{lstcsharp}
+  public class OnePlaceBuffer {
+    private readonly Asynchronous.Channel Empty;
+    private readonly Asynchronous.Channel<string> Contains;
+    public readonly Synchronous.Channel<string> Put;
+    public readonly Synchronous<string>.Channel Get;
+    public OnePlaceBuffer() {
+      Join j = Join.Create();
+      j.Initialize(out Empty);
+      j.Initialize(out Contains);
+      j.Initialize(out Put);
+      j.Initialize(out Get);
+      j.When(Put).And(Empty).Do(delegate(string s) {
+        Contains(s);
+      });
+      j.When(Get).And(Contains).Do(delegate(string s) {
+        Empty();
+        return s;
+      });
+      Empty();
+    }
+  }
+\end{lstcsharp}
+
+The public interface of \verb|OnePlaceBuffer| is similar to that of \verb|Buffer|,
+although the \verb|Put(s)| method is now synchronous, since it can now block
+in the case that there is already an unconsumed value in the buffer.
+
+The implementation of \verb|OnePlaceBuffer| makes use of two private
+asynchronous messages: \verb|Empty()| and \verb|Contains(string s)|. These are
+used to carry the state of the buffer and illustrate a very common
+programming pattern with \joins: note that we have made no use of
+fields. The way in which this works can be best understood by reading
+the constructor and the two chords in a simple declarative manner:
+\begin{itemize}
+\item When a new buffer is created, it is initially \verb|Empty()|. 
+\item If you call \verb|Put(s)| on an \verb|Empty()| buffer then it subsequently \verb|Contains(s)| and the call to \verb|Put(s)| returns. 
+\item If you call \verb|Get()| on a buffer which \verb|Contains(s)| then the buffer is subsequently \verb|Empty()| and \verb|s| is returned to the caller of \verb|Get()|. 
+\item Implicitly: In all other cases, calls to \verb|Put(s)| and \verb|Get()| block. 
+\end{itemize}
+It is easy to see that the constructor establishes, and both the
+chords maintain, the invariant that there is always exactly one
+\verb|Empty()| or \verb|Contains(s)| message pending on the
+buffer. Thus the two chords can be read as a fairly direct
+specification of a finite state machine.
+
+This example also demonstrates two new channel types.  The
+asynchronous channel type \dasync\ (not to be confused with
+\dasyncA{A}) of the \verb+Empty+ field is a special delegate type whose
+\verb+Invoke+ method takes zero arguments (and immediately returns void).  To encode the synchronous
+\verb+Put(s)+ method that simply
+returns control, not a value, to its caller, we use an instance of the synchronous
+channel type \dsyncvoidA{A}: this channel type has a delegate \verb+Invoke+
+method that returns \verb+void+ and takes one argument of type \verb+A+. 
+It may, of course, block, or raise an exception.
+
+
+%% Here are two examples:
+
+%% \begin{lstcsharp}
+%% /* An unbounded, unordered string buffer.
+%%    Producers send strings by calling b.Put(s), never waiting. 
+%%    Consumers receive strings by calling b.Get(), possibly waiting 
+%%    until/unless there is a matching b.Put(s). */
+%% class Buffer {
+%%  /* Declare the (a)synchronous channels */
+%%  public readonly Asynchronous.Channel<string> Put;
+%%  public readonly Synchronous<string>.Channel Get;
+%%  public Buffer() {
+%%    /* Allocate a new Join object for this buffer */
+%%    Join join = Join.Create();
+%%    /* Use it to initialize the channels */
+%%    join.Initialize(out Put);  
+%%    join.Initialize(out Get);
+%%    /* Finally, declare the join patterns(s) */
+%%    join.When(Get).And(Put).Do(delegate(string s) { /* the continuation */
+%%       return s; 
+%%    });
+%%  }
+%% }
+%% \end{lstcsharp}
+
+%% \begin{lstcsharp}
+%% /* An object of type WaitForN<R> waits for n replies of type R, asynchronously.
+%%    The example demonstrates joining with an array of asynchronous channels.
+%%    Producer i posts his results on w.Responses[i], asynchronously.
+%%    The consumer calls w.Wait(), blocking until/unless all responses have come in. */
+%% public class WaitForN<R> { 
+%%  public readonly Asynchronous.Channel<R>[] Responses;
+%%  public readonly Synchronous<R[]>.Channel Wait;
+%%  public WaitForN(int n) {
+%%      Join j = Join.Create(n + 1);
+%%      j.Initialize(out Responses, n);
+%%      j.Initialize(out Wait);
+%%      j.When(Wait).And(Responses).Do(delegate(R[] results) { /* the continuation */
+%%        return results; });
+%%  }
+%% }
+%% \end{lstcsharp}
+
+
+\section{\joins\ Library Reference}
+\label{joinsref}
+
+Programs that use the \joins\ library should reference the assembly
+\[ \texttt{Microsoft.Research.Joins.dll} \]
+located in the \texttt{Assemblies} directory of the installation and, optionally, use the namespace:
+\[ \texttt{using Microsoft.Research.Joins;} \]
+
+All of the types described here reside in the \texttt{Microsoft.Research.Joins} namespace.
+
+A new \cjoin\ instance \joinobj\ is allocated by calling an overload of factory method \methodref{Join.Create}. 
+
+\[ 
+\begin{array}{lr}
+  \cjoin\; \joinobj = \joindotcreate(); & \mbox{or} \\ 
+  \cjoin\; \joinobj = \joindotcreate(\textit{size});\mbox{or}\\
+  \cjoin\; \joinobj = \joindotcreate<\textit{FLAVOUR}>(); &  \\ 
+  \cjoin\; \joinobj = \joindotcreate<\textit{FLAVOUR}>(\textit{size});\\
+\end{array}
+\]
+\noindent The second and fourth overload takes an integer $\textit{size}$ argument. It is used to explicitly bound the number of channels supported by 
+\cjoin\ instance \joinobj. An omitted \textit{size}\ argument defaults to 32. 
+The \textit{size} argument provides the value for the constant, readonly property $\joinobj\dotsize$.
+
+The \textit{FLAVOUR} \emph{type} argument, which should be one of two types, \texttt{Join.Scalable} (the default) or \texttt{Join.LockBased},
+determines the underlying implementation: the new scalable, parallel implementation or the classic, lock-based implementation with limited scalability. The second may actually perform
+better on machines with small numbers of cores or adequately on join objects with little contention. We provide both to allow some choice and facilitate benchmarking.
+
+A \cjoin\ object notionally owns a set of asynchronous and synchronous \emph{channels}, each obtained by calling an overload of
+method \Initialize, passing the location, \textit{channel}(\textit{s}), of a channel or array of channels using an \out\ argument:\footnote{Languages that do not support \texttt{out} parameters can use alternative methods
+\texttt{CreateChannel()} and \texttt{CreateChannels()} provided by classes \texttt{Asynchronous}, \texttt{Synchronous},
+ $\texttt{Synchronous<\tvarr>}$.}
+\[ 
+\begin{array}{l}
+  \joinobj\dotinitialize(\out\ \textit{channel});\\
+  \joinobj\dotinitialize(\out\ \textit{channels}, \textit{length}); 
+\end{array}
+\]
+\noindent The second form takes an integer $\textit{length}$ argument and initializes the location \textit{channels} with an 
+an \emph{array} of \textit{length} distinct, asynchronous channels.
+
+
+\emph{Asynchronous} channels are instances of these (nested) delegate types: % \dasync\ or \dasyncA{\tvara}:
+\[ 
+\begin{array}{l}
+  \texttt{public delegate void } \dasync();\\
+  \texttt{public delegate void } \dasyncA{\tvara}(\tvara\ a);
+\end{array}
+\]
+\emph{Synchronous} channels are instances of  these (nested) delegate types: % \dsyncRA\tvarr\tvara,\dsyncR\tvarr, \dsyncvoidA\tvara, or \dsyncvoid.
+\[ 
+\begin{array}{l}
+  \texttt{public delegate } \tvarr\; \dsyncRA{\tvarr}{\tvara}(\tvara\;a);\\
+  \texttt{public delegate } \tvarr\; \dsyncR{\tvarr}();\\
+  \texttt{public delegate void } \dsyncvoidA{\tvara}(\tvara\;a);\\
+  \texttt{public delegate void } \dsyncvoid();\\
+\end{array}
+\]
+
+Notice that the outer class of a channel, \texttt{Asynchronous}, \texttt{Synchronous} or $\texttt{Synchronous<}$\tvarr$\texttt{>}$,
+should be read as a modifier that specifies its blocking behaviour and optional return type.
+
+The various channel flavours support zero or one arguments of type \texttt\tvara, and zero or one results of type \texttt\tvarr.
+If required, multiple arguments or results can be passed using user-declared tuple types or the provided generic
+$\cpair{\tvara}{\tvarb}$ type.
+
+When a synchronous channel is invoked, the caller
+must wait until the delegate returns (void or some value). 
+When an asynchronous channel is invoked, there is no result and the
+caller proceeds immediately without waiting. Waiting  may, but need not, involve blocking.
+
+Apart from its channels, a \cjoin\ object notionally owns a set of \emph{join patterns}. Each pattern is defined by invoking an overload of 
+the instance method \When\, followed by zero or more invocations of instance method \And\, followed by 
+a final invocation of instance method \Do. Thus a pattern definition typically takes the form:
+\[
+  \joinobj\dotwhen(\channel_1)\dotand(\channel_2) \cdots \dotand(\channel_n)\dotdo(\delegate);
+\]
+Alternatively, using an anonymous delegate for \delegate: 
+\[
+  \joinobj\dotwhen(\channel_1)\dotand(\channel_2) \cdots \dotand(\channel_n)\dotdo(\delegatekw(P_1\;p_1, \ldots, P_m\;p_m)\{\ldots\});
+\]
+
+Here, the initial argument $\channel_1$ to $\When(\channel_1)$ may be a synchronous or asynchronous channel or an array of (a)synchronous channels.
+Each subsequent argument  $\channel_i$ to $\And(\channel_i)$ (for $i>1$)  must be an (a)synchronous channel or an array of (a)synchronous channels.
+All synchronous channels that appear in a pattern must \emph{agree} on their return type.
+
+The argument \delegate\ to $\Do(\delegate)$ is a \emph{continuation} delegate that defines the body of the pattern.
+Although it varies with the pattern,  the type of the continuation is always an instance of one of the following delegate types (provided by the framework):
+
+\[ 
+\begin{array}{l}
+  \texttt{delegate } \tvarr\; \dlongreturn{\tvarr}{P_1,\ldots,P_m}(P_1\;p_1, \ldots,  P_m\;p_m );\\
+  \texttt{delegate void } \dlongreturnvoid{P_1,\ldots,P_m}(P_1\;p_1, \ldots,  P_m\;p_m );\\
+\end{array}
+\]
+
+The precise type of the continuation \delegate, including its number of arguments, is determined by the sequence of channels guarding it.
+If the first$\channel_1$ in the pattern is a synchronous  channel with return type $\tvarr$, then
+the continuation's return type is $\tvarr$; otherwise the return type is $\texttt{void}$.
+
+
+% The pattern's body \delegate\ is a 
+% (returning an \texttt\tvarr), or $\dreturnvoid{P_1,\ldots,P_m}$ (returning  
+% \texttt{void}) depending on whether the head $\channel_1$ is a synchronous channel that returns a result of some type \texttt\tvarr.
+The continuation receives the arguments of the joined channel invocations 
+as delegate parameters $P_1\;p_1, \ldots,  P_m\;p_m$, for $m\leq n$.
+The presence and types of any additional parameters $P_1\;p_1, \ldots,  P_m\;p_m$
+varies according the type of each argument $\channel_i$ joined with 
+invocation $\When(\channel_i)/\And(\channel_i)$ (for $1\leq i\leq n$):
+
+\begin{itemize}
+\item
+If $\channel_i$ is of non-generic type $\texttt{Channel}$ or $\texttt{Channel}[]$ then $\When(\channel_i)/\And(\channel_i)$ adds no parameter to delegate \delegate.
+
+\item
+If $\channel_i$ is of generic type $\texttt{Channel<}P\texttt{>}$,  for some type $P$ then $\When(\channel_i)/\And(\channel_i)$ 
+adds one parameter $p_j$ of type $P_j=P$ to delegate \delegate.
+
+\item
+If $\channel_i$ is an array of type $\texttt{Channel<}P\texttt{>}[]$ for some type $P$ then $\When(\channel_i)/\And(\channel_i)$ 
+adds one parameter $p_j$ of array type $P_j=P[]$ to delegate \delegate.
+\end{itemize}
+
+Note that this is true regardless of channel flavour (synchronous or asynchronous).
+
+Parameters are added to \delegate\ from left to right, in increasing order of 
+$i$. In the current implementation, a continuation can receive at most $m\leq\maxbindings$ parameters.
+
+% If necessary,
+% it is possible to join more than \maxbindings\ generic channels by calling  method $\AndPair(\channel_i)$ instead of $\And(\channel_i)$. 
+%$\And(\channel_i)$  modifies the last argument of the new continuation to be a pair consisting of the last argument
+%of the previous continuation and the new argument contributed by $ai$.
+
+
+A join pattern associates a set of (a)synchronous channels with a body \delegate.
+The body of a pattern can only execute once all the
+channels guarding it have been invoked. Thus, when a channel is 
+invoked there may be zero, one, or more patterns which are enabled:
+\begin{itemize}
+\item
+If no pattern is enabled then the channel invocation is queued up. If the channel is asynchronous,
+then this simply involves adding the arguments (the contents of the message) to an internal queue.
+If the channel is synchronous, then the calling thread is blocked, joining a notional queue of threads waiting on this channel.
+\item
+If there is a single enabled join pattern, then the arguments of the calls involved in the match are de-queued,
+any blocked thread involved in the match is awakened, and the body of the pattern is executed in one of the threads.
+Its result - some value or exception - is broadcast to all other waiting threads, awakening them.
+\item
+When a join pattern that involves only asynchronous channels is enabled, then it runs in a new thread.
+If there are several enabled patterns, then an unspecified one is chosen to run.
+\item
+Similarly, if there are multiple invocations of a particular (a)synchronous channel queued up, 
+which call will be de-queued when there is a match is unspecified.
+\end{itemize}
+
+The current number of channels initialized on $\joinobj$ is available as readonly property $\joinobj\dotcount$; 
+its value is bounded by $\joinobj\dotsize$.
+Any invocation of $\joinobj\dotinitialize$ that would cause $\joinobj\dotcount$ to exceed $\joinobj\dotsize$ throws \typeref{JoinException}.
+
+
+Join patterns must be well-formed, both individually and collectively. Executing $\Do(\delegate)$ to
+complete a join pattern will throw \typeref{JoinException} if $\delegate$ is
+\texttt{null}, the pattern repeats an asynchronous channel, an (a)synchronous
+channel is \texttt{null} or \emph{foreign} to this pattern's \cjoin\ instance, the
+join pattern is \emph{redundant}, or the join pattern is \emph{empty}.
+A channel is foreign to a \cjoin\ instance \joinobj\ if it was not allocated by some call to
+$\joinobj\dotinitialize$.
+A pattern is redundant when the set
+of channels joined by the pattern subsets or supersets the channels
+joined by an existing pattern on this \texttt{Join} instance.
+A pattern is empty when the set of channels joined by the pattern is the empty set 
+(emptiness can only arise from joining empty arrays of channels).
+
+
+\section{Tutorials}\label{tutorials}
+
+\subsection{Spawning Threads \sample{SpawningThreads}}
+
+Calling an asynchronous channel that
+occurs as the sole channel in a chord gives an easy way to start a new thread
+with parameters. For example,
+\begin{lstcsharp}
+public class ThreadSpawner {
+  static readonly Asynchronous.Channel<string> Spawn;
+  static ThreadSpawner() {
+    Join join = Join.Create();
+    join.Initialize(out Spawn);
+    join.When(Spawn).Do(delegate(string s) {
+      while (true) {
+        Console.WriteLine(s);
+        Thread.Sleep(1000);
+      };
+    });
+  }
+  static void Main() {
+    Spawn("thread one");
+    Spawn("thread two");
+  }
+}
+\end{lstcsharp}
+prints
+\begin{lstcsharp}
+thread one
+thread two
+thread one
+...
+\end{lstcsharp}
+
+Whenever the method \verb|Spawn()| is called, the call returns immediately
+and the body is executed in a new thread.
+
+If a join pattern commences with an asynchronous channel, i.e.\
+the argument to \mwhen\ is asynchronous,
+then its continuation spawns a new thread:
+
+An asynchronous chord may involve more than just one message, delaying thread creation until/unless all
+messages have been received. For instance:
+
+\begin{lstcsharp}
+  readonly Asynchronous.Channel Electron, Positron;
+  ...
+  join.When(Electron).And(Positron).Do(delegate { 
+    Photon(); Photon();
+  });
+\end{lstcsharp}
+
+\subsection{Using Asynchronous Messages For State \sample{Counter}}
+Objects which have mutable state and which may be accessed from
+multiple threads usually have to ensure that methods which read or
+write that state are executed with some form of mutual exclusion. In \csharp, the simplest way of achieving this is to use the \verb|lock| statement
+\footnote{or a \texttt{System.Runtime.CompilerServices.MethodImplAttribute}}
+\footnote{or explicit calls to \texttt{System.Threading.Monitor.Enter}/\texttt{Exit}} as in
+\begin{lstcsharp}
+  public class Counter {
+    long i;
+    public Counter() {
+      i = 0;
+    }
+    public void Inc() {
+      lock (this) {        // acquire the lock on this object
+        i = i + 1;         // update the state
+      }                    // release the lock
+    }
+    public long Value() {
+      lock (this) {
+        return i;          // release the lock & return state
+      }
+    }
+  }
+\end{lstcsharp}
+
+Of course, the above still works, but there are also alternatives. Here is one:
+
+\begin{lstcsharp}
+public class Counter {
+  long i;
+  private readonly Asynchronous.Channel mylock;
+  public readonly Synchronous.Channel Inc;
+  public readonly Synchronous<long>.Channel Value;
+
+  public Counter() {
+    Join join = Join.Create();
+    join.Initialize(out mylock);
+    join.Initialize(out Inc);
+    join.Initialize(out Value);
+    join.When(Inc).And(mylock).Do(delegate 
+    { // acquire the lock
+        i = i + 1;  // update the state
+        mylock();  // release the lock
+    });
+    join.When(Value).And(mylock).Do(delegate
+    { // acquire the lock
+        long r = i;  // read the state
+        mylock();    // release the lock
+        return r;    // return state;
+    });
+    i = 0;
+    mylock();
+  }
+}
+\end{lstcsharp}
+
+
+In this case we have used a private asynchronous message
+\verb|mylock()| to protect access to the field \verb|i|. When the
+\verb|Inc()| method is called, it will block until/unless there is a
+waiting \verb|mylock|. When there is, then the call proceeds and the
+\verb|mylock()| message is consumed, so further calls to \verb|Inc()|
+or \verb|Value()| from other threads will block until another
+\verb|mylock()| is sent. Thus the thread which called \verb|Inc()| has
+exclusive access to the field whilst it does the increment. Once it
+has finished, it sends another \verb|mylock()| to allow a subsequent
+call access. Similar reasoning applies to \verb|Value()|. Observe that
+there is always at most one call to \verb|mylock()| pending on a
+counter.
+
+Going a step further, we can eliminate the field entirely. Instead, we
+pass the state of the counter around as an argument to a private
+asynchronous message:
+
+\begin{lstcsharp}
+  using Microsoft.Research.Joins;
+
+  public class Counter {
+    private readonly Asynchronous.Channel<long> mystate;
+    public readonly Synchronous.Channel Inc;
+    public readonly Synchronous<long>.Channel Value;
+    public Counter() {
+      Join join = Join.Create();
+      join.Initialize(out mystate);
+      join.Initialize(out Inc);
+      join.Initialize(out Value);
+      join.When(Inc).And(mystate).Do(delegate(long i)
+      {  // acquire the state
+        mystate(i + 1); // reissue the state
+      });
+      join.When(Value).And(mystate).Do(delegate(long i)
+      { // acquire the state
+        mystate(i); // reissue the state
+        return i; 
+      });
+      mystate(0);
+    }
+  }
+\end{lstcsharp}
+
+In such a trivial case, using join patterns to implement mutual
+exclusion this way is probably a bad idea - it is much the same length
+as the version which uses \verb|lock|, is less efficient and has more
+opportunities for error (a typical example is forgetting to resend the
+state-carrying message at the end of a method). However, in cases
+where one wants more fine-grained locking on parts of the state of an
+object, or to block and awaken particular threads when certain
+conditions are established (i.e. situations in which the \csharp\
+programmer would use \verb|Notify()| and \verb|Pulse()|), this style
+of programming becomes preferable.
+
+\subsubsection{Example: A Reader-Writer Lock \sample{ReaderWriter}}
+
+Controlling concurrent access to a shared, mutable resource is a
+classic problem. Clients request, and later release, either read-only
+or read-write access to the resource. To preserve consistency but
+minimize waiting, one usually wishes to allow either any number of
+readers or a single writer, but not both, to have access at any one
+time. The code below implements a reader-writer lock in
+\comega. Writers call \verb|Exclusive()|, do some writing and then
+call \verb|ReleaseExclusive()|. Readers call \verb|Shared()|, do some
+reading and then call \verb|ReleaseShared()|:
+
+\begin{lstcsharp}
+  using Microsoft.Research.Joins; 
+
+  public class ReaderWriter {
+
+    private readonly Asynchronous.Channel Idle;
+    private readonly Asynchronous.Channel<int> Sharing;
+    public readonly Synchronous.Channel Exclusive, ReleaseExclusive;
+    public readonly Synchronous.Channel Shared, ReleaseShared;
+
+    public ReaderWriter() {
+      Join j = Join.Create();
+      j.Initialize(out Idle);
+      j.Initialize(out Sharing);
+      j.Initialize(out Exclusive);
+      j.Initialize(out ReleaseExclusive);
+      j.Initialize(out Shared);
+      j.Initialize(out ReleaseShared);
+
+      j.When(Exclusive).And(Idle).Do(delegate { });
+      j.When(ReleaseExclusive).Do(delegate { Idle(); });
+
+      j.When(Shared).And(Idle).Do(delegate { Sharing(1); });
+      j.When(Shared).And(Sharing).Do(delegate(int n)
+      {
+        Sharing(n + 1);
+      });
+      j.When(ReleaseShared).And(Sharing).Do(delegate(int n)
+      {
+        if (n == 1) Idle(); else Sharing(n - 1);
+      });
+
+      Idle();
+    }
+  }
+}
+\end{lstcsharp}
+
+
+Again, we use private messages, \verb|Idle()| and \verb|Sharing(n)| (where \verb+n+ is the current number of readers), to carry the state. And once more, there is a simple declarative reading  of the constructor and chords which allows one to understand the implementation:
+\begin{itemize}
+\item When the lock is created there are no readers or writers, so it
+is \verb|Idle()|.
+\item If a writer requests \verb|Exclusive()| access and the lock is
+\verb|Idle()| then he may proceed (but the lock is no longer
+\verb|Idle()|).
+\item If a writer indicates he is finished by calling
+\verb|ReleaseExclusive()| then the lock is \verb|Idle()| again.
+\item If a reader requests \verb|Shared()| access and the lock is
+\verb|Idle()| then the lock moves to the state \verb|Sharing(1)|, meaning
+there is now one reader, and he may proceed.
+\item If a reader requests \verb|Shared()| access and there are
+currently $n$ readers, then there are now $n+1$ readers, and the new
+one may proceed. The state transitions from \verb|Sharing(n)| to \verb|Sharing(n+1)|.
+\item If a reader indicates he is finished by calling
+\verb|ReleaseShared()| and there were previously $n$ readers, then if $n$
+was $1$ then lock is \verb|Idle()| again, otherwise there are now $n-1$ shared
+readers (\verb|Sharing(n-1)|). In either case, the reader who has just relinquished access
+may proceed with whatever else he has to do.
+\end{itemize}
+
+Assuming that all the clients obey the request-release protocol, the
+invariant is that there is at most one pending private async message
+representing the state:
+\[
+      none \leftrightarrow Idle() \leftrightarrow Sharing(1) 
+\leftrightarrow Sharing(2) \leftrightarrow Sharing(3) \leftrightarrow\ldots
+\]
+Operationally, it may help to think about what does \emph{not} appear in the
+code. There is, for example, no chord which is applicable if a client
+calls \verb|Exclusive()| when there is a pending \verb|Sharing(n)| message. In such a
+case, the client will block until all the readers have released their
+access and an \verb|Idle()| message has been sent.\footnote{There is a question about
+fairness here - see the Polyphonic \csharp\ paper \cite{polyphony-toplas} for a modification
+to this example which enforces a simple form of fairness between
+readers and writers.}
+
+\subsubsection{Example: A Bounded Buffer \sample{BoundedBuffer}}
+
+We have already given examples of an unbounded buffer
+(for which producers are never blocked) and a single-slot buffer (at
+most one value may be held in the buffer). Here we show how one might
+program a general $n$-place buffer. There are several
+approaches one could take, but the following seems the neatest:
+\begin{lstcsharp}
+  using Microsoft.Research.Joins;
+
+  public class BoundedBuffer<T> {
+    private readonly Asynchronous.Channel Token;
+    private readonly Asynchronous.Channel<T> Value;
+    public readonly Synchronous.Channel<T> Put;
+    public readonly Synchronous<T>.Channel Get;
+
+    public BoundedBuffer(int size) {
+      Join join = Join.Create();
+      join.Initialize(out Token);
+      join.Initialize(out Value);
+      join.Initialize(out Put);
+      join.Initialize(out Get);
+      join.When(Put).And(Token).Do(delegate(T t)
+      {
+        Value(t);
+      });
+      join.When(Get).And(Value).Do(delegate(T t)
+      {
+        Token();
+        return t;
+      });
+      for (int i = 0; i < size; i++) {
+        Token();
+      }
+    }
+  }
+\end{lstcsharp}
+
+When an $n$-slot buffer object is created, it sends itself $n$
+\verb|Token()| messages. Calls to \verb|Put(o)| block until there is a
+\verb|Token()| available, consume it and send a \verb|Value(o)| message
+containing the object which was put in the buffer. Calls to
+\verb|Get()| block until there is a \verb|Value(o)| message available,
+consume it and produce a fresh \verb|Token()|. The invariant here, of
+course, is that the number of \verb|Token()| messages plus the number
+of \verb|Value(-)| messages always equals the size of the buffer.
+
+Here, we've taken the opportunity to make the \verb+BoundedBuffer+ a strongly-typed, generic class \verb+BoundedBuffer<T>+.
+
+\subsubsection{Futures \sample{Futures}}
+
+A \emph{future} is an old concurrency abstraction used to represent the 
+value of a concurrent computation.
+Creating a future from a computation spawns a new thread to execute the computation in parallel. When the current (or another) thread actually needs the value of the computation it calls a method on the future to wait until/unless the computation is done. Between creating the future, and obtaining its value,
+the current thread is free to perform other tasks.
+
+Generic futures with explicit waiting are simple to code up with \joins:
+
+\begin{lstcsharp}
+using Microsoft.Research.Joins;
+
+public class Future<T> {
+  public delegate T Computation();
+  public readonly Synchronous<T>.Channel Get;
+
+  private readonly Asynchronous.Channel Execute, Done;
+  private T Value;
+  public Future(Computation comp) {
+    if (comp == null) throw new ArgumentNullException();
+    Join j = Join.Create();
+    j.Initialize(out Get);
+    j.Initialize(out Done);
+    j.Initialize(out Execute);
+    j.When(Get).And(Done).Do(delegate
+    {
+      Done(); // reissue Done to allow multiple Gets
+      return Value;
+    });
+    j.When(Execute).Do(delegate
+    {
+      Value = comp();
+      comp = null; // discard comp to avoid space leak
+      Done();
+    });
+    Execute();
+  }
+}
+\end{lstcsharp}
+
+Consider computing the maximum of an integer array \texttt{a}. 
+Using a future we can split this into computing the maximum of the bottom and top halves, with the latter executing concurrently:
+
+\begin{lstcsharp}
+int[] a = ...
+Future<int> topMax = 
+  new Future<int>(delegate { return Max(a, a.Length / 2, a.Length); });
+int bottomMax = Max(a, 0, a.Length / 2);
+int max = (bottomMax <= topMax.Get()) ? topMax.Get() : bottomMax;
+\end{lstcsharp}
+
+For the final comparison, the first call to \texttt{topMax.Get()}
+may block waiting for the computation to finish, but the second 
+will return immediately.
+
+Modifying class \texttt{Future<T>} to cope with exceptions thrown by 
+\texttt{comp}, cancelation of \texttt{comp} or to use a thread pool 
+is easy.
+
+\subsection{Dynamic Joins \sample{JoinMany}}\label{sec:dynamicjoins}
+
+Here's a simple generic class for awaiting the arrival two asynchronous result:
+
+\begin{lstcsharp}
+public class JoinTwo<R1, R2> {
+  public readonly Asynchronous.Channel<R1> First; 
+  public readonly Asynchronous.Channel<R2> Second;
+  public readonly Synchronous<Pair<R1, R2>>.Channel Wait;
+  public JoinTwo(){
+    Join j = Join.Create();
+    j.Initialize(out First);
+    j.Initialize(out Second);
+    j.Initialize(out Wait);
+    j.When(Wait).And(First).And(Second).Do(
+      delegate(R1 r1, R2 r2)
+      {
+        return new Pair<R1, R2>(r1, r2);
+      });
+ }
+}
+\end{lstcsharp}
+
+
+What if we want to wait for 
+any number of replies, where that number is only known at runtime?
+
+Inspired by a similar abstraction in the CCR \cite{scool:ccr}, the \joins\ library lets you initialize, and join with, \emph{arrays} of 
+asynchronous channels.
+Since the size of an array can be determined at runtime, this supports \emph{dynamic} join patterns.
+
+Here is a simple example of a class that waits for $n$ replies of type \tvarr.
+
+\begin{lstcsharp}
+using Microsoft.Research.Joins;
+
+public class JoinMany<R> {
+  private readonly Asynchronous.Channel<R>[] Responses;
+  public readonly Synchronous<R[]>.Channel Wait;
+  public Asynchronous.Channel<R> Response(int i) {
+    return Responses[i];
+  }
+  public JoinMany(int n) {
+    Join j = Join.Create(n + 1);
+    j.Initialize(out Responses, n);
+    j.Initialize(out Wait);
+    j.When(Wait).And(Responses).Do(delegate(R[] results)
+    {
+      return results;
+    });
+  }
+}
+\end{lstcsharp}
+
+The class declares an array, \texttt{Responses}, of response channels, each carrying a value of type \tvarr.
+An object $o\texttt{ = new JoinMany}(n)$ requires $n+1$ channels: $n$ asynchronous response channels, $o\texttt{.Responses[i]}$ ($ 0\leq i < n$), and one synchronous channel, $o\texttt{.Wait}$.
+The constructor \texttt{Create}s a \cjoin\ object supporting $n+1$ channels; 
+it then {\Initialize}s the response channels field with an array of $n$ distinct channels and declares a pattern 
+that waits on all the channels in this array. 
+The continuation of the pattern receives all of the responses as a separate array (also of size $n$) of results of type $\tvarr$.
+The consumer calls $o\texttt{.Wait}()$, blocking until/unless all responses have arrived; 
+producer $i$ just posts her result $r$ on $o\texttt{.Response(}i\texttt{)(}r{)}$, asynchronously.
+Here, we have taken the precaution of hiding the array in a private field to prevent external updates.
+
+If we are only interested in waiting for multiple signals, not values, we can use this simpler, non-generic, \texttt{JoinMany} class:
+
+\begin{lstcsharp}
+using Microsoft.Research.Joins;
+
+public class JoinMany {
+  private readonly Asynchronous.Channel[] Responses;
+  public readonly Synchronous.Channel Wait;
+  public Asynchronous.Channel Response(int i) {
+    return Responses[i];
+  }
+  public JoinMany(int n) {
+    Join j = Join.Create(n + 1);
+    j.Initialize(out Responses, n);
+    j.Initialize(out Wait);
+    j.When(Wait).And(Responses).Do(() => { });
+  }
+}
+\end{lstcsharp}
+
+Because \texttt{Responses} is declared as array of (parameter-less) \texttt{Asynchronous.Channel} channels, the pattern's continuation 
+receives no argument from joining with \texttt{Responses}. Indeed,
+The continuation does nothing but return control to the caller of \texttt{Wait}.
+
+
+\subsection{Rendezvous}\label{sec:dynamicjoins}
+
+Finally, we can join several \emph{synchronous channels} to provide thread \emph{rendezvous}. For example:
+
+\begin{lstcsharp}
+public class RendezvousTwo<R1, R2> {
+  public readonly Synchronous<Pair<R1,R2>>.Channel<R1> First; 
+  public readonly Synchronous<Pair<R1,R2>>.Channel<R2> Second;
+  public RendezvousTwo(){
+    Join j = Join.Create();
+    j.Initialize(out First);
+    j.Initialize(out Second);
+    j.When(First).And(Second).Do(
+      (r1,r2) =>
+      {
+        return new Pair<R1, R2>(r1, r2);
+      });
+ }
+}
+\end{lstcsharp}
+
+Callers of \texttt{First} and \texttt{Second} will wait until or unless the other has arrived at the barrier, obtaining the argument of each as a pair.
+
+What if we want to wait for  any number of replies, where that number is only known at runtime?
+
+To rendezvous $n$-threads, for arbitrary $n$, we can once again use arrays of channels:
+
+\begin{lstcsharp}
+using Microsoft.Research.Joins;
+
+public class RendezvousMany<R> {
+  private readonly Synchronous<R[]>.Channel<R>[] Signal;
+  public RendezvousMany(int n) {
+    Join j = Join.Create(n);
+    j.Initialize(out Responses, n);
+    j.When(Responses).Do(responses => responses);
+  }
+}
+\end{lstcsharp}
+
+A caller of \texttt{Signal[i]} will wait until or unless one message has arrived on all other signals in the pattern, 
+obtaining the argument of each (including its own) in a corresponding position of the returned (and shared) array.
+
+A more traditional barrier (that avoids the array allocation but exchanges no data) is easily obtained using argument-less channels:
+
+\begin{lstcsharp}
+using Microsoft.Research.Joins;
+
+public class Barrier {
+  private readonly Synchronous.Channel[] Signal;
+  public Barrier(int n) {
+    Join j = Join.Create(n);
+    j.Initialize(out Responses, n);
+    j.When(Responses).Do(() => {});
+  }
+}
+\end{lstcsharp}
+
+
+\section{Concurrency Demos}\label{demos}
+
+These demos can all be found in the \texttt{Demos} subdirectory of the
+\joins\ installation directory.
+
+\subsection{Dining Philosophers \demo{DiningPhilosophers}}
+This demo, adapted from Nick Benton's original code, implements an animated solution to the
+classic dining philosophers problem. It demonstrates the use of
+asynchronous messages to carry state (in the \texttt{Room} and
+\texttt{Fork} classes, for example) as well as asynchronous messages
+to coordinate different threads (the \texttt{EndMove()} message, for
+example). There is one thread for each philosopher and another thread
+(the GUI thread) which runs the animation using a timer.
+
+\subsection{Philosophers \demo{Philosophers}}
+
+This demo is another implementation of dining philosophers. It is
+designed to demonstrate the improved performance of the ``lock-free'',
+scalable implementation versus the lock-based one.  The demo has $n$
+philosophers trying, as fast they can, to consume a fixed amount of
+food. The demo starts two windows in separate processes. One uses the
+lock-based flavour of Joins \lstinline{Joins.LockBased}, the other the
+scalable flavour of Joins \lstinline{Joins.Scalable}.  Clicking a
+button sets the philosophers off. On a multi-core machine with reasonable number of core (6 or more), the
+scalable implementation should run noticebly faster since there is no
+contention over a shared lock.
+
+\subsection{Boids \demo{Boids}}
+
+This demo is 3D visualization of flocking behaviour in birds, a classic $n$-body problem.
+Each bird is implemented as a thread that used data from all other birds to update its own position and velocity, then
+notifying the other birds and the UI of its new position and velocity. The birds and UI synchronize using a generalized barrier.
+
+The demo is designed to demonstrate the improved performance of the ``lock-free'',
+scalable implementation versus the lock-based one. When the ``add contention'' button is checked, 
+each  of the $n$ birds will perform an additional $n$  synchronous communications on a private channel (belonging to the barrier).
+
+In the lock-based implementation, the additional communications add \emph{contention} for the shared-lock, which winds up serializing $0(n^2)$ communications thus taking, in the limit, 
+$0(n^2)$ time on $n$ processors.
+
+In the scalable implementation, the additional communications add some overhead, but no contention: the synchronization sequences of different birds
+don't interfere (since each communicates on a dedicated channel) and can proceed in parallel, taking, in the limit, just $O(n)$ time on $n$ processors.
+
+The net effect is that frame-rate of the lockbased implementation drops significantly while the scalable one's does not (on a multicore machine).
+
+
+\subsection{Life \demo{Boids}}
+
+This demo is a visualization of Conway's \emph{Game of Life}, written in Visual Basic. The demo was 
+back-ported from a Concurrent Basic sample; see \cite{oopsla08cb} for a more detailed description.
+
+This is a simple parallel implementation of a grid computation.
+A virtual grid of $pm^2$ cells is partitioned, vertically and horizontally, amongst $p^2$ nodes.
+Each node computes an $m^2$ subregion of the grid using a dedicated worker thread.
+A node maintains a (double buffered) private array with $m^2$ cells, overlapping one edge with each neighbour.
+To synchronize, a node repeatedly:  
+\begin{itemize}
+\item posts its 4 interior edges to its neighbours;
+\item waits to receive 4 exterior edges on 4 separate channels from its   neighbours;
+\item computes new cell values in parallel with other nodes.
+\end{itemize}
+To simplify the algorithm, exterior nodes post exterior edges to themselves.
+
+\subsection{Santa Claus \demo{Santa}}
+This demo implements a solution to a concurrent programming problem
+about Santa and his reindeer. For a full account of the problem and
+its solution using join patterns, please see the associated paper \cite{benton:santa}.
+
+\subsection{Lift Controller \demo{LiftController}}
+
+This demo animates the lift controller algorithm described in Chapter
+14 of the ERLANG book \cite{erlang}, adding some simulated people
+to drive the animation.  The demo uses one active object (thread) for each lift,
+lift cabin, floor, and person; the GUI thread runs the animation using a timer. 
+This demo was written from scratch, without relying on existing \comega\ sources.
+
+
+
+
+
+\bibliography{tutorial}
+
+\end{document}
+

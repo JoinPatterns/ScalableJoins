@@ -1,0 +1,140 @@
+@article{polyphony-toplas,
+  author = 	 {N.~Benton and L.~Cardelli and C{\'e}dric Fournet},  
+  title = 	 {Modern Concurrency Abstractions for {\csharp}},
+  journal = TOPLAS, publisher = ACM,
+  volume = 26,
+  issue = 5,
+  pages = "769--804",
+  month = sep,
+  year = 2004
+,   note = "An extended abstract appears in ECOOP'02 (LNCS 2374)"
+,   abstract = "Polyphonic C# is an extension of the C# language with
+new asynchronous concurrency constructs, based on the join
+calculus. We describe the design and implementation of the language
+and give examples of its use in addressing a range of concurrent
+programming problems."
+,   url = "http://doi.acm.org/10.1145/1018203.1018205"
+,   issn = {0164-0925}
+}
+
+@inproceedings{polyphony:ecoop,
+  author="N.~Benton and L.~Cardelli and C.~Fournet",
+  title="Modern Concurrency Abstractions for \csharp",
+  editor="B.~Magnusson",
+  booktitle="Proceedings of the 16th European Conference on Object-Oriented Programming (ECOOP 2002)",
+  month=Jun, year=2002,
+  series="LNCS", number=2374, publisher="Springer-Verlag"
+}
+
+@Misc{benton:santa,
+  author="N.~Benton",
+  title="Jingle Bells: Solving the {Santa Claus} Problem in {Polyphonic} \csharp, \linebreak\url{http://research.microsoft.com/~nick/santa.pdf}",
+  month=Mar, year=2003, 
+  url= {http://research.microsoft.com/~nick/santa.pdf}
+}
+
+@inproceedings{scool:ccr,
+  author="G.~Chrysanthakopoulos  and S.~Singh",
+  title="An Asynchronous Messaging Library for \csharp",
+  booktitle="Synchronization and Concurrency in Object-Oriented Languages (SCOOL), OOPSLA 2005 Workshop",
+  month="October", year="2005",
+  uri="http://hdl.handle.net/1802/2105",
+  publisher="UR Research"
+}
+
+
+@Misc{joinjava,
+  author = "G.~S.~Itzstein and D.~Kearney",
+  title =  {{J}oin{J}ava, \url{http://joinjava.unisa.edu.au}},
+}
+
+@Misc{comega,
+  author = "Microsoft Research",
+  title =  {{{C}$\omega$}, \url{http://research.microsoft.com/Comega}},
+  url =   {http://research.microsoft.com/Comega}
+}
+
+
+@book{erlang,
+ author = {J. Armstrong and R. Virding and C. Wikstr\"om and M. Williams},
+ editor = {},
+ title = {Concurrent programming in ERLANG (2nd ed.)},
+ year = {1996},
+ isbn = {0-13-508301-X},
+ publisher = {Prentice Hall International (UK) Ltd.},
+ address = {Hertfordshire, UK, UK},
+ }
+
+@InProceedings{oopsla08cb,
+  author = 	 {Claudio Russo},
+  title = 	 {{J}oin {P}atterns for {V}isual {B}asic},
+  booktitle = 	 {OOPSLA},
+  year = 	 {2008},
+  abstract = {
+We describe an extension of Visual Basic 9.0 with asynchronous
+concurrency constructs - join patterns - based on the join calculus.
+Our design of Concurrent Basic (CB) builds on earlier work on
+Polyphonic C# and Comega.  Since that work, the need for
+language-integrated concurrency has only grown, both due to the
+arrival of commodity, multi-core hardware, and the trend for Rich
+Internet Applications that rely on asynchronous client-server
+communication to hide latency.  Unlike its predecessors, CB adopts an
+event-like syntax that should be familiar to existing VB programmers.
+Coupled with Generics, CB allows one to declare re-useable concurrency
+abstractions that were clumsy to express previously.  CB removes its
+ancestors' inconvenient inheritance restriction, while providing new
+extensibility points useful in practical applications that must
+co-exist with or want to exploit alternative threading models
+available on the platform.  CB is implemented as an extension of the
+production VB 9.0 compiler.
+}
+}
+
+@InProceedings{russo07JoinsLibrary,
+  author = 	 {C.~Russo},
+  title = 	 "The {J}oins {C}oncurrency {L}ibrary",
+  booktitle = 	 {PADL},
+  year = 	 {2007},
+  pages =        {260--274},
+  publisher = {Springer-Verlag},
+  abstract = {
+Comega extended C\# 1.x with a
+simple, declarative and powerful model of concurrency - join patterns
+- applicable both to multithreaded applications and to the
+orchestration of asynchronous, event-based distributed
+applications. With Generics available in C\# 2.0, we can now
+provide join patterns as a library rather than a language
+feature. The Joins library extends its clients with an
+embedded, type-safe and mostly declarative language for expressing
+synchronization patterns.  The library has some advantages over Comega: it
+is language neutral, supporting other languages like Visual Basic; its join
+patterns are more dynamic, allowing solutions difficult to express with 
+Comega; its code is easy to modify,
+fostering experimentation. Although presenting fewer optimization
+opportunities, the implementation is efficient and its
+interface makes it trivial to translate Comega programs to C\#.  We describe the interface and implementation of Joins which
+(ab)uses almost every feature of Generics. }
+}
+
+@Misc{joinstutorial,
+  author = "C.~V.~Russo",
+  title =  {Joins: {A} {Concurrency} {Library}},
+  url =   {http://research.microsoft.com/\~{}crusso/papers/tutorial.pdf},
+  year = 2006
+}
+@inproceedings{lnotes-fournet-gonthier-join-tutorial,
+  author = 	 {C.~Fournet and G.~Gonthier},
+  title = 	 {The Join Calculus: a Language for Distributed Mobile Programming},
+  booktitle = 	 "APPSEM Summer School, Caminha, Portugal, "#sep#" 2000",
+  series       =   "LNCS", volume=2395, publisher=sv,
+  year = 2002
+}
+
+@inproceedings   {FournetGonthier96
+, author       =   {C.~Fournet and G.~Gonthier}
+, title        =   {The Reflexive Chemical Abstract Machine 
+                  and the Join-Calculus}
+, booktitle    =   "POPL"
+, year         = 1996
+, pages        =   "372--385"
+}

@@ -1,0 +1,871 @@
+\documentclass{article}
+\newcommand{\comega}{\mbox{C$\omega$}}
+\newcommand{\csharp}{\mbox{C$^\sharp$}}
+\title{\comega\ Concurrency Constructs}
+\author{Nick Benton}
+\bibliographystyle{plain}
+\begin{document}
+\maketitle
+\section{Getting Started with \comega\ Concurrency}
+
+\subsection{Overview}
+\comega\ extends the \csharp\ programming language with new
+asynchronous concurrency abstractions. The language presents a simple
+and powerful model of concurrency which is applicable both to
+multithreaded applications running on a single machine and to the
+orchestration of asynchronous, event-based applications communicating
+over a wide area network.
+
+The new constructs are a mild syntactic variant of those we have
+previously described under the name `Polyphonic \csharp'
+\cite{polyphony:ecoop} -- \comega\ combines Polyphonic \csharp\ with
+the rich new data programming model described elsewhere.
+
+
+\subsection{The Basic Idea}
+In \comega, methods can be defined as either \emph{synchronous} or
+\emph{asynchronous}. When a synchronous method is called, the caller
+is blocked until the method returns, as is normal in \csharp. However,
+when an asynchronous method is called, there is no result and the
+caller proceeds immediately without being blocked. Thus from the
+caller's point of view, an asynchronous method is like a \verb|void| one, but
+with the useful extra guarantee of returning immediately. We often
+refer to asynchronous methods as \emph{messages}, as they are a
+one-way communication from caller to receiver (think of posting a
+letter rather as opposed to asking a question and waiting for an
+answer during a face-to-face conversation).
+
+By themselves, asynchronous method declarations are not particularly
+novel. Indeed, .NET already has a widely-used set of library classes
+which allow any method to be invoked asynchronously (though note that
+in this standard pattern it is the caller who decides to invoke a
+method asynchronously, whereas in \comega\ it is the callee
+(defining) side which declares a particular method to be
+asynchronous). The significant innovation in \comega\ is the way
+in which method bodies are defined.
+
+In most languages, including \csharp, methods in the signature of a
+class are in bijective correspondence with the code of their
+implementations -- for each method which is declared, there is a
+single, distinct definition of what happens when that method is
+called. In \comega, however, a body may be associated with a \emph{set}
+of (synchronous and/or asynchronous) methods. We call such a
+definition a \emph{chord}, and a particular method may appear in the header
+of several chords. The body of a chord can only execute once \emph{all} the
+methods in its header have been called. Thus, when a polyphonic method
+is called there may be zero, one, or more chords which are enabled:
+\begin{itemize}
+\item If no chord is enabled then the method invocation is queued
+up. If the method is asynchronous, then this simply involves adding
+the arguments (the contents of the message) to a queue. If the method
+is synchronous, then the calling thread is blocked.
+\item If there is a single enabled chord, then the arguments of the
+calls involved in the match are de-queued, any blocked thread involved
+in the match is awakened, and the body runs.
+\item When a chord which involves only asynchronous methods runs, then
+it does so in a new thread.
+\item If there are several chords which are enabled then an
+unspecified one of them is chosen to run.
+\item Similarly, if there are multiple calls to a particular method
+queued up, we do not specify which call will be de-queued when there
+is a match.
+\end{itemize}
+
+
+\subsubsection{Example: A Simple Buffer}
+
+Here is the simplest interesting example of a \comega\ class:
+\begin{verbatim}
+public class Buffer {
+   public async Put(string s);
+   
+   public string Get() & Put(string s) { 
+      return s; 
+   } 
+} 
+\end{verbatim}
+This class contains two methods: a synchronous one, \verb|Get()|,
+which takes no arguments and returns a string, and an asynchronous
+one, \verb|Put()|, which takes a string argument and (like all
+asynchronous methods) returns no result. The class definition contains
+two things: a declaration (with no body) for the asynchronous method,
+and a chord. The chord declares the synchronous method and defines a
+body (the return statement) which can run when \emph{both} the
+\verb|Get()| and \verb|Put()| methods have been called.
+
+Now assume that producer and consumer threads wish to communicate via
+an instance \verb|b| of the class \verb|Buffer|. Producers make calls
+to \verb|b.Put()|, which, since the method is asynchronous, never
+block. Consumers make calls to \verb|b.Get()|, which, since the method
+is synchronous, will block until or unless there is a matching call to
+\verb|Put()|. Once \verb|b| has received both a \verb|Put()| and a
+\verb|get()|, the body runs and the argument to the \verb|Put()| is
+returned as the result of the call to \verb|Get()|. Multiple calls to
+\verb|Get()| may be pending before a \verb|Put()| is received to
+reawaken one of them, and multiple calls to \verb|Put()| may be made
+before their arguments are consumed by subsequent \verb|Get()|s. Note
+that
+\begin{enumerate}
+\item The body of the chord runs in the (reawakened) thread
+corresponding to the matched call to \verb|Get()|. Hence no new threads are
+spawned in this example.
+\item The code which is generated by the class definition above is
+completely thread safe. The compiler automatically generates the
+locking necessary to ensure that, for example, the argument to a
+particular call of \verb|Put()| cannot be delivered to two distinct calls to
+\verb|Get()|. Furthermore (though it makes little difference in this small
+example), the locking is fine-grained and brief - polyphonic methods
+to not lock the whole object and are not executed with ``monitor
+semantics''.
+\item The reader may wonder how we know which of the methods involved
+in a chord gets the returned value. The answer is that it is always
+the synchronous one, and there can be at most one synchronous method
+involved in a chord.
+\end{enumerate}
+
+In general, the definition of a synchronous method in \comega\
+consists of more than one chord, each of which defines a body which
+can run when the method has been called \emph{and} a particular set of
+asynchronous messages are present. For example, we could modify the
+example above to allow \verb|Get()| to synchronize with calls to
+either of two different \verb|Put()| methods:
+\begin{verbatim}
+public class Buffer {
+   public async Put(string s);
+   public async Put(int n);
+   
+   public string Get() 
+   & Put(string s) { 
+      return s; 
+   } 
+   & Put(int n) {
+      return n.ToString();
+   }
+   
+} 
+\end{verbatim}
+Now we have two asynchronous methods (which happen to be
+distinguished by type rather than name) and a synchronous method which
+can synchronize with either one, with a different body in each case.
+
+\subsubsection{Example: A One-place Buffer}
+The previous example showed how to define a buffer of unbounded size:
+any number of calls to \verb|Put()| could be queued up before matching a
+\verb|Get()|. We now define a variant in which only a single data value may
+held in the buffer at any one time:
+\begin{verbatim}
+public class OnePlaceBuffer {
+   private async empty();
+   private async contains(string s);
+
+   public OnePlaceBuffer() {
+      empty();
+   }
+
+   public void Put(string s) & empty() {
+      contains(s);
+      return;
+   }
+
+   public string Get() & contains(string s) {
+      empty();
+      return s;
+   }
+}
+\end{verbatim}
+The public interface of OnePlaceBuffer is similar to that of Buffer,
+although the \verb|Put()| method is now synchronous, since it can now block
+in the case that there is already an unconsumed value in the buffer.
+
+The implementation of OnePlaceBuffer makes use of two private
+asynchronous messages: \verb|empty()| and \verb|contains()|. These are
+used to carry the state of the buffer and illustrate a very common
+programming pattern in \comega: note that we have made no use of
+fields. The way in which this works can be best understood by reading
+the constructor and the two chords in a simple declarative manner:
+\begin{itemize}
+\item When a new buffer is created, it is initially \verb|empty()|. 
+\item If you call \verb|Put(s)| on an \verb|empty()| buffer then it subsequently \verb|contains(s)| and the call to \verb|Put()| returns. 
+\item If you call \verb|Get()| on a buffer which \verb|contains(s)| then the buffer is subsequently \verb|empty()| and \verb|s| is returned to the caller of \verb|Get()|. 
+\item Implicitly: In all other cases, calls to \verb|Put()| and \verb|Get()| block. 
+\end{itemize}
+It is easy to see that the constructor establishes, and both the
+chords maintain, the invariant that there is always exactly one
+\verb|empty()| or \verb|contains(s)| message pending on the
+buffer. Thus the two chords can be read as a fairly direct
+specification of a finite state machine.
+
+\section{\comega\ Concurrency Tutorials}
+\subsection{Spawning Threads}
+\comega\ is built on the existing \csharp /.NET implementation of
+threads. Thus one can start new threads in a \comega\ program by the
+usual technique of calling \verb|Start()| on an instance of
+\texttt{System.Threading.Thread} which was constructed from an
+instance of the delegate
+\texttt{System.Threading.ThreadStart}. However, the delegate must be
+created from a method with no arguments, so passing parameters to
+threads created this way requires some extra work (see the Creating
+Threads topic in the .NET documentation). In \comega, the body of a
+chord which contains \emph{only} asynchronous methods will execute in
+a new thread. In particular, calling an asynchronous method which is
+defined in a chord by itself gives an easy way to start a new thread
+with parameters. For example:
+\begin{verbatim}
+using System;
+using System.Threading;
+
+public class SpawningTutorial {
+    static async m(string s);
+
+    static void Main() {
+        m("thread one");
+        m("thread two");
+    }
+    
+    when m(string s) {
+      while(true) {
+        Console.WriteLine(s);
+        Thread.Sleep(1000);
+      }
+    }
+}
+\end{verbatim}
+prints
+\begin{verbatim}
+thread one
+thread two
+thread one
+thread two
+thread one
+thread two
+...
+\end{verbatim}
+Whenever the method \verb|m()| is called, the call returns immediately
+and the body is executed in a new thread. Note that chords which
+contain only asynchronous methods are introduced with the keyword
+\verb|when|.
+
+
+\subsection{Using Asynchronous Messages For State}
+Objects which have mutable state and which may be accessed from
+multiple threads usually have to ensure that methods which read or
+write that state are executed with some form of mutual exclusion. In \csharp, the simplest way of achieving this is to use the \verb|lock| statement\footnote{or a \texttt{System.Runtime.CompilerServices.MethodImplAttribute} or explicit calls to \texttt{System.Threading.Monitor.Enter}/\texttt{Exit}} as in
+\begin{verbatim}
+public class Counter {
+ long i;
+
+ public Counter {
+   i=0;
+ }
+
+ public void Inc {
+   lock (this) {        // acquire the lock on this object
+     i = i+1;           // update the state
+   }                    // release the lock
+ }
+
+ public long Value() {
+   lock (this) {
+     return i;
+   }
+ }
+}
+\end{verbatim}
+Of course, the above still works in \comega, but there are also alternatives. Here is one:
+\begin{verbatim}
+public class Counter {
+  long i;
+  async mylock();
+
+  public Counter {
+    i=0;
+    mylock();
+  }
+
+  public void Inc() & mylock() { // acquire the lock
+    i = i+1;                     // update the state
+    mylock();                    // release the lock
+  }
+
+  public long Value() & mylock() {
+    long r = i;
+    mylock();
+    return r;
+  }
+}
+\end{verbatim}
+In this case we have used a private asynchronous message
+\verb|mylock()| to protect access to the field \verb|i|. When the
+\verb|Inc()| method is called, it will block until/unless there is a
+waiting \verb|mylock|. When there is, then the call proceeds and the
+\verb|mylock()| message is consumed, so further calls to \verb|Inc()|
+or \verb|Value()| from other threads will block until another
+\verb|mylock()| is sent. Thus the thread which called \verb|Inc()| has
+exclusive access to the field whilst it does the increment. Once it
+has finished, it sends another \verb|mylock()| to allow a subsequent
+call access. Similar reasoning applies to \verb|Value()|. Observe that
+there is always at most one call to \verb|mylock()| pending on a
+counter.
+
+Going a step further, we can eliminate the field entirely. Instead we
+pass the state of the counter around as an argument to a private
+asynchronous message:
+\begin{verbatim}
+public class Counter {
+  async mystate(long i);
+
+  public Counter {
+    mystate(0);
+  }
+
+  public void Inc() & mystate(long i) { // acquire the state
+    mystate(i+1);
+  }
+
+  public long Value() & mystate(long i) {
+    mystate(i);
+    return i;
+  }
+}
+\end{verbatim}
+In such a trivial case, using \comega\ constucts to implement mutual
+exclusion this way is probably a bad idea - it is much the same length
+as the version which uses \verb|lock|, is less efficient and has more
+opportunities for error (a typical example is forgetting to resend the
+state-carrying message at the end of a method). However, in cases
+where one wants more fine-grained locking on parts of the state of an
+object, or to block and awaken particular threads when certain
+conditions are established (i.e. situations in which the \csharp\
+programmer would use \verb|Notify()| and \verb|Pulse()|), this style
+of programming becomes preferable.
+
+\subsubsection{Example: A Reader-Writer Lock}
+
+Controlling concurrent access to a shared, mutable resource is a
+classic problem. Clients request, and later release, either read-only
+or read-write access to the resource. To preserve consistency but
+minimize waiting, one usually wishes to allow either any number of
+readers or a single writer, but not both, to have access at any one
+time. The code below implements a reader-writer lock in
+\comega. Writers call \verb|Exclusive()|, do some writing and then
+call \verb|ReleaseExclusive()|. Readers call \verb|Shared()|, do some
+reading and then call \verb|ReleaseShared()|:
+\begin{verbatim}
+public class ReaderWriter {
+   private async idle();
+   private async s(int n);
+
+   public ReaderWriter() {
+      idle();
+   }
+
+   public void Exclusive() 
+   & idle() {
+   }
+
+   public void ReleaseExclusive() {
+      idle(); 
+   } 
+
+   public void Shared() 
+   & idle() {
+      s(1);
+   }
+   & s(int n) {
+      s(n+1);
+   }
+
+   public void ReleaseShared() 
+   & s(int n) { 
+      if (n == 1) 
+        idle(); 
+      else 
+        s(n-1); 
+   }
+}
+\end{verbatim}
+
+Again, we use private messages, \verb|idle()| and \verb|s(n)|, to carry the state. And once more, there is a simple declarative reading  of the constructor and chords which allows one to understand the implementation:
+\begin{itemize}
+\item When the lock is created there are no readers or writers, so it
+is \verb|idle()|.
+\item If a writer requests \verb|Exclusive()| access and the lock is
+\verb|idle()| then he may proceed (but the lock is no longer
+\verb|idle()|).
+\item If a writer indicates he is finished by calling
+\verb|ReleaseExclusive()| then the lock is \verb|idle()| again.
+\item If a reader requests \verb|Shared()| access and the lock is
+\verb|idle()| then the lock moves to the state \verb|s(1)|, meaning
+there is now one reader, and he may proceed.
+\item If a reader requests \verb|Shared()| access and there are
+currently $n$ readers, then there are now $n+1$ readers, and the new
+one may proceed.
+\item If a reader indicates he is finished by calling
+\verb|ReleaseShared()| and there were previously $n$ readers, then if $n$
+was $1$ then lock is \verb|idle()| again, otherwise there are now $n-1$ shared
+readers. In either case, the reader who has just relinquished access
+may proceed with whatever else he has to do.
+\end{itemize}
+
+Assuming that all the clients obey the request-release protocol, the
+invariant is that there is at most one pending private async message
+representing the state:
+\[
+      none \leftrightarrow idle() \leftrightarrow s(1) 
+\leftrightarrow s(2) \leftrightarrow s(3) \leftrightarrow\ldots
+\]
+Operationally, it may help to think about what does \emph{not} appear in the
+code. There is, for example, no chord which is applicable if a client
+calls \verb|Exclusive()| when there is a pending \verb|s(n)| message. In such a
+case, the client will block until all the readers have released their
+access and an \verb|idle()| message has been sent.\footnote{There is a question about
+fairness here - see the Polyphonic \csharp\ paper for a modification
+to this example which enforces a simple form of fairness between
+readers and writers.}
+
+\subsubsection{Example: A Bounded Buffer}
+The `Getting Started' section gives examples of an unbounded buffer
+(for which producers are never blocked) and a single-slot buffer (at
+most one value may be held in the buffer). Here we show how one might
+program a general $n$-place buffer in \comega. There are several
+approaches one could take, but the following seems the neatest:
+\begin{verbatim}
+public class BufferN {
+  private async token();
+  private async value(object o);
+
+  public BufferN(int size) {
+    for(int i=0;i<size;i++) {
+       token();
+    }
+  }
+
+  public void Put(object o) & token() {
+    value(o);
+  }
+
+  public object Get() & value(o) {
+    token();
+    return o;
+  }
+}
+\end{verbatim}
+When an $n$-slot buffer object is created, it sends itself $n$
+\verb|token()| messages. Calls to \verb|Put()| block until there is a
+\verb|token()| available, consume it and send a \verb|value()| message
+containing the object which was put in the buffer. Calls to
+\verb|Get()| block until there is a \verb|value()| message available,
+consume it and produce a fresh \verb|token()|. The invariant here, of
+course, is that the number of \verb|token()| messages plus the number
+of \verb|value()| message always equals the size of the buffer.
+
+\subsection{Asynchronous Communication}
+The previous section describes how private asynchronous messages may
+be used to carry state. Here we show how to orchestrate asynchronous
+messages between different objects.
+
+\subsubsection{Semaphores}
+A semaphore exposes two methods, \verb|Wait()|, which is synchronous, and \verb|Signal()|, which is asynchronous. Calls to \verb|Wait()| block until there has been a matching call to \verb|Signal()|:
+\begin{verbatim}
+public class Semaphore {
+  public async Signal();
+
+  public void Wait() & Signal() {
+  }
+}
+\end{verbatim}
+For example, here is one way to structure a program which spawns two
+new threads and then waits for them both to finish:
+\begin{verbatim}
+public class MyApp {
+  static async task1(int arg, Semaphore s);
+  static async task2(int arg, Semaphore s);
+
+  public static void Main() {
+    Semaphore s = new Semaphore();
+
+    task1(1,s);
+    task2(2,s);
+    // do something in main thread
+    s.Wait(); // wait for one to finish
+    s.Wait(); // wait for another to finish
+    Console.WriteLine("both tasks finished");
+  }
+
+  when task1(int arg, Semaphore s) {
+     // do something 
+     s.Signal(); // say we've finished
+  }
+  when task2(int arg, Semaphore s) {
+     // do something else
+     s.Signal(); // say we've finished
+  }
+}
+\end{verbatim}
+
+\subsubsection{Asynchronous call and return patterns}
+Calling an asynchronous method is a one-way fire and forget
+operation. How then does one get results back from asynchronous calls?
+Firstly, one must explicitly tell the receiver of the call what do to
+with the result. This is often done by passing an extra parameter
+along with the arguments to the call. This extra argument can be of
+some application specific agreed type (for example, a buffer into
+which the result is to be put or the name of a file into which the result is
+to be written) or, more generally, a delegate (callback) which should
+be invoked with the result. In terms of the analogy between calling an
+asynchronous method and sending a letter, the extra parameter
+corresponds to the ``return address'' which one adds to the letter's
+actual content. Thus the interface to a typical service which can be
+invoked asynchronously and which returns a result asynchronously might
+look like this:
+\begin{verbatim}
+public delegate async MyCallback(object result);
+
+public interface IService {
+  public async Service(object parameter, MyCallback cb);
+}
+\end{verbatim}
+where the implementation of \texttt{Service} will do some computation
+with the parameter and then invoke the callback with a result.
+
+The second interesting aspect of asynchronous programming is that
+messages arrive at unpredictable times and in unpredictable
+orders. Amongst other things, this means that correlating requests and
+responses can require some extra programming, as it may not otherwise
+be clear what a given response refers to. The correlation
+information can take the form of extra explicit tokens passed to,
+and returned back from, a service (corresponding to ``your ref:
+whatever'' or ``please quote order number nnn in future
+correspondence'' in a letter). Alternatively, the correlation tokens
+can be passed more implicitly by creating new target objects for the
+callbacks sent with different requests (this is a bit like adding
+``Dept. XYZnn'' to the return address of a letter). One also often
+wishes to coordinate multiple asynchronous messages, for example
+performing an action once a number of replies have been received or a
+certain time has passed. For example, here's how one might invoke two
+asynchronous services and subsequently wait for replies from both of
+them:
+\begin{verbatim}
+  class Join2 {
+    public MyCallback firstcb; 
+    public MyCallback secondcb;
+    async first(object Fst);
+    async second(object Snd);
+
+    public Join2() {
+      firstcb  = new MyCallback(first);
+      secondcb = new MyCallback(second);
+    }
+
+    public void Wait(out object x, out object y) 
+    & first(object Fst)
+    & second(object Snd) {
+      x = Fst; y = Snd;
+    }
+  }
+
+  class Client {
+    public static void Main(string[] args) {
+      IService s1 = ... ;
+      IService s2 = ... ;
+      Join2 j = new Join2();
+      s1.Service(args[0], j.firstcb);
+      s2.Service(args[1], j.secondcb);
+      ...                   // do something useful in the meantime...
+      object x,y;
+      j.Wait(out x, out y); // wait for both results to come back
+      ...                   // do something with them
+    }
+  }
+\end{verbatim}
+\verb|Join2| is a library class which encapsulates the pattern of waiting for
+two responses. The client creates an instance of \verb|Join2|, passes its
+callbacks along with the arguments to two services and then carries on
+with its own processing. Later, it calls \verb|Wait()| which will block
+until/unless both of the callbacks have been invoked. Note that the
+correlation here is of the `target address' (demultiplexed) form,
+rather than the `explicit token' (multiplexed) form; this is usually
+the preferred style in \comega, since synchronization behaviour cannot
+depend directly on message contents.
+
+Writing classes like \verb|Join2| which wait for just one result
+(Select) or more complex conditions (e.g. at least $m$ out of $n$) is
+straightforward.
+
+\subsubsection{Active Objects}
+One common pattern of asynchronous programming is that of active
+objects, or actors. Active objects communicate by asynchronous
+messages which are processed sequentially by a thread of control which
+is specific to that object. One way of programming active objects in
+\comega\ is by inheritance from an abstract base class:
+\begin{verbatim}
+public abstract class ActiveObject : MarshalByRefObject {
+  protected bool done = false;
+  async start();
+  protected abstract void ProcessMessage();
+  
+  public ActiveObject() {
+    start();
+  }
+	   
+  when start() {
+    while (!done) {
+      ProcessMessage();
+    }
+  }
+}
+\end{verbatim}
+When an instance of \texttt{ActiveObject} is created, the \texttt{start()}
+method is called, which spawns a new thread which repeatedly calls the
+abstract synchronous method \texttt{ProcessMessage()}. Subclasses of
+\texttt{ActiveObject} then override \texttt{ProcessMessage()}, joining it
+in a sequence of chords with each of the asynchronous messages which
+they wish to process. For example, a message redistributor object in
+an event-based application might look like:
+\begin{verbatim}
+public interface EventSink {
+  async Post(string message);
+}
+
+public class Distributor : ActiveObject, EventSink {
+  private ArrayList subscribers = new ArrayList();
+  private string myname;
+  
+  public async Subscribe(EventSink sink);
+  public async Post(string message);
+  
+  protected override void ProcessMessage() 
+  & Subscribe(EventSink sink) {
+    subscribers.Add(sink);
+  } 
+  & Post(string message) {
+    foreach (EventSink sink in subscribers) {
+      sink.Post(myname + ":" + message);
+    }
+  }
+  
+  public Distributor(string name) {
+    myname = name;
+  }
+}
+\end{verbatim}
+A \verb|Distributor| object can receive asynchronous \verb|Subscribe| and
+\verb|Post| messages. Each \verb|Post| message is resent to
+each of the current subscribers. No locking is required for access to
+the current subscriber list since, although messages can arrive at any
+time, they are processed strictly sequentially by the \verb|Distributor|'s
+message-loop thread (without blocking their sender, of course).
+
+Since threads are a relatively expensive resource on the CLR, having
+many instances of this \verb|ActiveObject| class around at once will
+be inefficient. However, ActiveObjects are not built in to \comega\ -
+they're just one example of the sort of thing one can build easily
+with the \comega\ concurrency constructs. Implementing variants of
+this pattern, such as families of objects which share a custom
+threadpool implementation is also straightforward.
+
+
+\section{\comega\ Concurrency Constructs Reference}
+\subsection{Syntax}
+This section gives a nearly-formal specification of the extensions to the
+\csharp\ grammar associated with \comega\ concurrency constructs.
+\subsubsection{Asynchronous methods}
+Asynchronous methods have a return type of \texttt{async}, which is a
+new keyword in \comega\ (similar to \texttt{void}). 
+Each asynchronous method in a class must
+have an explicit \emph{async-declaration} of the form
+\[
+\textit{attributes}_{opt}\ \textit{method-modifiers}_{opt}\
+\texttt{async}\ \textit{member-name}\ \texttt{(}\
+\textit{formal-parameter-list}_{opt} \texttt{);}
+\]
+Asynchronous.Channel-declarations can appear in interfaces and one can also declare
+asynchronous delegate types:
+\[
+\textit{attributes}_{opt}\ \textit{delegate-modifiers}_{opt}\
+\texttt{delegate async}\ \textit{identifier}\ \texttt{(}\
+\textit{formal-parameter-list}_{opt} \texttt{);}
+\]
+\subsubsection{Chords}
+Chords (or synchronization patterns) define the behaviours of
+asynchronous methods and of those (ordinary)
+synchronous methods which synchronize with asynchronous ones. The
+definition \emph{method-declaration} in the \csharp\ grammar is
+replaced by the following in \comega:
+\[
+\textit{sync-method-header}\ \textit{sync-chord}^{+}
+\]
+where \emph{sync-method-header} is
+\[
+\textit{attributes}_{opt}\ \textit{method-modifiers}_{opt}\
+(\texttt{void} | \textit{type})\ \textit{member-name}\ \texttt{(}\
+\textit{formal-parameter-list}_{opt} \texttt{)}
+\]
+and \emph{sync-chord} is
+\[
+(\texttt{\&}\ \textit{async-header})^\ast\ \textit{method-body}
+\]
+where \emph{async-header} is
+\[
+\textit{member-name}\ \texttt{(}\
+\textit{formal-parameter-list}_{opt} \texttt{)}
+\]
+
+There are also another form of \emph{class-member-declaration} in
+\comega, viz. \emph{async-chord}, which is defined by
+\[
+\texttt{when}\ \textit{async-header}\ (\texttt{\&}\
+\textit{async-header})^\ast\ \textit{method-body}
+\]
+where \texttt{when} is another new keyword.
+
+\subsubsection{Well-formedness conditions}
+\begin{itemize}
+\item Asynchronous methods may not have \texttt{ref} or \texttt{out}
+parameters.
+\item Static and non-static methods may not be mixed within a chord.
+\item The \emph{member-name} in any \emph{async-header} within a class
+declaration must correspond to an \emph{async-declaration} of the same
+name and parameter types within that class.
+\item Although a given asynchronous method (identified by name and
+parameter types) may occur in more than one \emph{sync-chord} and/or
+\emph{async-chord}, all the asynchronous methods within a single chord
+must be distinct. Within a single class, a particular synchronous
+method may only occur in a single \emph{method-declaration}.
+\item For each \emph{sync-chord} in a given \emph{method-declaration}, the formal parameters to the
+synchronous method and the formal parameters in each
+\emph{async-header} in the chord must all be distinct. Similarly, the
+parameters in each \emph{async-header} in an \emph{async-chord} must
+all be distinct.
+\item The bound variables in each \emph{method-body} in a
+\emph{method-declaration} are the formal parameters of the synchronous
+method unioned with those of all the \emph{async-header}s in the
+enclosing \emph{sync-chord}. Similarly, the bound variables of a
+\emph{method-body} in an \emph{async-chord} are all the parameters of
+the associated \emph{async-header}s.
+\item The returned value (if any) of each \emph{method-body} in a
+\emph{method-declaration} must match the declared return type of the
+synchronous method being defined. Method bodies in \emph{async-chord}s
+may not return a value.
+\item In a \texttt{struct} definition, only static methods may occur in
+non-trivial chords.
+\item If a (synchronous or asynchronous) method declaration in a class
+$C$ is marked \texttt{override} then any method which appears in a
+chord with the \emph{overridden} method (in the superclass where that
+is declared) must also be overridden in the class $C$.
+\end{itemize}
+This last restriction means that, for example, the following is
+ill-formed:
+\begin{verbatim}
+public class C {
+  virtual async g();
+
+  virtual void f() & g() {
+   ...
+  }
+  ...
+}
+
+public class D : C {
+  override void f() {
+    ...
+  }
+  ...
+}
+\end{verbatim}
+Since in \texttt{D}, we have overridden the definition of \texttt{f()}
+in \texttt{C} but have not also overridden \texttt{g()} with which it
+appears in a chord. (If \texttt{g()} were non-virtual then the
+definition of \texttt{C} alone would generate a warning, since
+\texttt{f()} would be declared \texttt{virtual} but could never be
+legally overridden.)
+
+\subsection{Typing}
+We treat \verb$async$ as a subtype of \verb$void$ and allow \emph{covariant
+return types} just in the case of these two (pseudo)types. Thus
+\begin{itemize}
+\item an \verb$async$ method may override a \verb$void$
+one, 
+\item a \verb$void$ delegate may be created from
+an \verb$async$ method, and
+\item an \verb$async$ method may implement a \verb$void$ method in an interface
+\end{itemize}
+but not conversely. This design makes intuitive sense (an \verb$async$
+method \emph{is} a \verb$void$ one, but has the extra property of
+returning `immediately') and also maximizes compatibility with
+existing {\csharp} code (superclasses, interfaces and delegate
+definitions) making use of \verb$void$.
+\subsection{Semantics}
+An asynchronous method will return (essentially) immediately to its
+caller without blocking and with no result. Asynchronous methods are
+automatically given the \texttt{OneWay} attribute, so that calls to
+them over remoting are genuinely non-blocking.
+
+Each chord involves a non-empty set of methods. A chord is
+\emph{enabled} on an object (or class, in the case of static chords)
+when at least one \emph{unconsumed} call has been made to each of
+those methods on that object (or class). When an asynchronous method
+is called on an object (or class) and no chord is thereby enabled, the
+call is queued. When a synchronous method is called on an object ()
+and no chord is enabled, the calling thread is blocked and
+queued. When at least one chord is enabled on an object (or class)
+then (an unspecified) one of them will be chosen to fire, which
+\emph{consumes} (dequeues) one (unspecified) call of each of the
+methods in the chord and executes the body of the chord with the
+formal parameters bound to the arguments of those calls. In the case
+of a synchronous chord, the body is executed in the reawoken thread
+which made the consumed synchronous call. In the case of an
+asynchronous chord, the body is executed in a new thread.
+
+
+\section{\comega\ Concurrency Samples}
+These samples can all be found in the Samples subdirectory of the
+\comega\ distribution.
+\subsection{Dining Philosophers}
+This sample implements an animated solution to the classic dining
+philosophers problem. It demonstrates the use of asynchronous messages
+to carry state (in the \texttt{Room} and \texttt{Fork} classes, for
+example) as well as asynchronous messages to coordinate different
+threads (the \texttt{endmove()} message, for example). There is one
+thread for each philosopher and another thread (the GUI thread) which
+runs the animation using a timer.
+
+\subsection{Santa Claus}
+This sample implements a solution to a concurrent programming problem
+about Santa and his reindeer. For a full account of the problem and
+the solution, please see the associated paper \cite{benton:santa}.
+
+\subsection{TerraServer Client}
+This sample implements a client to the TerraServer web service, which
+provides USGS aerial imagery (see http://terraservice.net). It
+requires a working connection to the internet (and the web service to
+be running) in order to work.
+
+Type a city and state name into the text boxes, click one of the
+buttons and an aerial photograph will be displayed (this may take 30
+or 40 seconds, even with a fast connection). TerraServer stores
+imagery as small `tiles', several of which must be retrieved and
+pasted together to make a whole picture. If you click `Synchronous'
+then the individual tiles are requested and retrieved one at a time
+from the server. If you click `Asynchronous' then asynchronous
+requests for all the tiles are fired off together and the results are
+then processed as they arrive. Making the requests asynchronously is
+usually significantly faster, as shown by the time displays under each
+button.
+
+The sample illustrates `impedance matching' between the usual .NET
+asynchronous calling pattern and {\comega}'s asynchronous methods. It
+is also interesting because the reference to the web service was
+created as a \csharp\ project within Visual Studio, which was then
+linked with the \comega\ code to form the whole solution.
+
+\subsection{Stock Trader}
+This sample illustrates distributed programming using \comega\ with
+.NET remoting. It comprises a command-line server application and a
+GUI client application. Multiple clients (possibly running on
+different machines) can connect to an instance of the server and make
+bids and offers for stocks. The server matches up buyers and sellers
+and notifies them of the outcome when there is a trade.
+
+\bibliography{concurrency}
+\end{document}

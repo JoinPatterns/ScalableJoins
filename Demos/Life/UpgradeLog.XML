@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="Life">
+</Property><Property Name="Solution File" Value="C:\crusso\scalablejoins\Demos\Life\Life.sln">
+</Property><Property Name="Date" Value="23 February 2011">
+</Property><Property Name="Time" Value="19:28">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="Life.sln" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\Life.sln">
+</Event><Event ErrorLevel="0" Project="Life" Source="Life.vbproj" Description="Project file successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\Life.vbproj">
+</Event><Event ErrorLevel="0" Project="Life" Source="GenericPCA.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\GenericPCA.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="Life.Designer.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\Life.Designer.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="Life.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\Life.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\AssemblyInfo.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\AssemblyInfo.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\Application.Designer.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\Application.Designer.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\Resources.Designer.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\Resources.Designer.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\Settings.Designer.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\Settings.Designer.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="ParallelLife.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\ParallelLife.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="WaitForN.vb" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\WaitForN.vb">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\Application.myapp" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\Application.myapp">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\Settings.settings" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\Settings.settings">
+</Event><Event ErrorLevel="0" Project="Life" Source="Life.resx" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\Life.resx">
+</Event><Event ErrorLevel="0" Project="Life" Source="My Project\Resources.resx" Description="File successfully backed up as C:\crusso\scalablejoins\Demos\Life\Backup\My Project\Resources.resx">
+</Event><Event ErrorLevel="0" Project="Life" Source="Life.vbproj" Description="Project converted successfully">
+</Event><Event ErrorLevel="3" Project="Life" Source="Life.vbproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="Life.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="Life.sln" Description="Converted">
+</Event><Event ErrorLevel="0" Project="Life" Source="Life.vbproj" Description="Scan complete: Upgrade not required for project files.">
+</Event></UpgradeLog>

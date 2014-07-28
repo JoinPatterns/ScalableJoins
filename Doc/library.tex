@@ -1,0 +1,238 @@
+
+\section{\joins\ Library Reference}
+\label{joinsref}
+
+Programs that use the \joins\ library should reference the assembly
+\[ \texttt{Microsoft.Research.Joins.dll} \]
+located in the \texttt{Assemblies} directory of the installation and, optionally, use the namespace:
+\[ \texttt{using Microsoft.Research.Joins;} \]
+
+All of the types described here reside in the \texttt{Microsoft.Research.Joins} namespace.
+
+
+% The \cjoin\ class provides a mostly declarative, type-safe mechanism for
+% defining thread-safe asynchronous and synchronous
+% communication channels and patterns, for use by
+% concurrently executing local threads or remote processes.
+% The communication "channels" are special delegate values
+% obtained from a common join object. Communication and/or
+% synchronization takes place by invoking these delegates,
+% passing arguments and optionally waiting for replied
+% return values.  The allowable communication patterns as
+% well as their effects are declared using join patterns:
+% bodies of code whose execution is guarded by linear
+% combinations of channels. The body, or continuation, of a
+% join pattern is provided by the user as a delegate that
+% may manipulate external resources protected by the join
+% object.
+
+% Here are two examples:
+
+% \begin{verbatim}
+% /* An unbounded, unordered string buffer.
+%    Producers send strings by calling b.Put(s), never waiting. 
+%    Consumers receive strings by calling b.Get(), possibly waiting 
+%    until/unless there is a matching b.Put(s). */
+% class Buffer {
+%  /* Declare the (a)synchronous channels */
+%  public readonly Asynchronous.Channel<string> Put;
+%  public readonly Synchronous<string>.Channel Get;
+%  public Buffer() {
+%    /* Allocate a new Join object for this buffer */
+%    Join join = Join.Create();
+%    /* Use it to initialize the channels */
+%    join.Initialize(out Put);  
+%    join.Initialize(out Get);
+%    /* Finally, declare the join patterns(s) */
+%    join.When(Get).And(Put).Do(delegate(string s) { /* the continuation */
+%       return s; 
+%    });
+%  }
+% }
+% \end{verbatim}
+
+% \begin{verbatim}
+% /* An object of type WaitForN<R> waits for n replies of type R, asynchronously.
+%    The example demonstrates joining with an array of asynchronous channels.
+%    Producer i posts his results on w.Responses[i], asynchronously.
+%    The consumer calls w.Wait(), blocking until/unless all responses have come in. */
+% public class WaitForN<R> { 
+%  public readonly Asynchronous.Channel<R>[] Responses;
+%  public readonly Synchronous<R[]>.Channel Wait;
+%  public WaitForN(int n) {
+%      Join j = Join.Create(n + 1);
+%      j.Initialize(out Responses, n);
+%      j.Initialize(out Wait);
+%      j.When(Wait).And(Responses).Do(delegate(R[] results) { /* the continuation */
+%        return results; });
+%  }
+% }
+% \end{verbatim}
+
+
+A new \cjoin\ instance \joinobj\ is allocated by calling an overload of factory method \methodref{Join.Create}. 
+
+\[ 
+\begin{array}{lr}
+  \cjoin\; \joinobj = \joindotcreate(); & \mbox{or} \\ 
+  \cjoin\; \joinobj = \joindotcreate(\textit{size});\\
+\end{array}
+\]
+\noindent The second overload takes an integer $\textit{size}$ argument. It is used to explicitly bound the number of channels supported by 
+\cjoin\ instance \joinobj. An omitted \textit{size}\ argument defaults to 32. 
+The \textit{size} argument provides the value for the constant, readonly property $\joinobj\dotsize$.
+
+A \cjoin\ object notionally owns a set of asynchronous and synchronous \emph{channels}, each obtained by calling an overload of
+method \Initialize, passing the location, \textit{channel}(\textit{s}), of a channel or array of channels using an \out\ argument:\footnote{Languages that do not support \texttt{out} parameters can use alternative methods
+\texttt{CreateChannel()} and \texttt{CreateChannels()} provided by classes \texttt{Asynchronous}, \texttt{Synchronous},
+ $\texttt{Synchronous<\tvarr>}$.}
+\[ 
+\begin{array}{l}
+  \joinobj\dotinitialize(\out\ \textit{channel});\\
+  \joinobj\dotinitialize(\out\ \textit{channels}, \textit{length}); 
+\end{array}
+\]
+\noindent The second form takes an integer $\textit{length}$ argument and initializes the location \textit{channels} with an 
+an \emph{array} of \textit{length} distinct, asynchronous channels.
+
+
+
+\emph{Asynchronous} channels are instances of these (nested) delegate types: % \dasync\ or \dasyncA{\tvara}:
+\[ 
+\begin{array}{l}
+  \texttt{public delegate void } \dasync();\\
+  \texttt{public delegate void } \dasyncA{\tvara}(\tvara\ a);
+\end{array}
+\]
+\emph{Synchronous} channels are instances of  these (nested) delegate types: % \dsyncRA\tvarr\tvara,\dsyncR\tvarr, \dsyncvoidA\tvara, or \dsyncvoid.
+\[ 
+\begin{array}{l}
+  \texttt{public delegate } \tvarr\; \dsyncRA{\tvarr}{\tvara}(\tvara\;a);\\
+  \texttt{public delegate } \tvarr\; \dsyncR{\tvarr}();\\
+  \texttt{public delegate void } \dsyncvoidA{\tvara}(\tvara\;a);\\
+  \texttt{public delegate void } \dsyncvoid();\\
+\end{array}
+\]
+
+Notice that the outer class of a channel, \texttt{Asynchronous}, \texttt{Synchronous} or $\texttt{Synchronous<}$\tvarr$\texttt{>}$,
+should be read as a modifier that specifies its blocking behaviour and optional return type.
+
+The various channel flavours support zero or one arguments of type \texttt\tvara, and zero or one results of type \texttt\tvarr.
+If required, multiple arguments or results can be passed using user-declared tuple types or the provided generic
+$\cpair{\tvara}{\tvarb}$ type.
+
+When a synchronous channel is invoked, the caller
+is blocked until the delegate returns (void or some value). 
+When an asynchronous channel is invoked, there is no result and the
+caller proceeds immediately without being blocked.
+
+Apart from its channels, a \cjoin\ object notionally owns a set of \emph{join patterns}. Each pattern is defined by invoking an overload of 
+the instance method \When\, followed by zero or more invocations of instance method \And\, followed by 
+a final invocation of instance method \Do. Thus a pattern definition typically takes the form:
+\[
+  \joinobj\dotwhen(\channel_1)\dotand(\channel_2) \cdots \dotand(\channel_n)\dotdo(\delegate);
+\]
+Alternatively, using an anonymous delegate for \delegate: 
+\[
+  \joinobj\dotwhen(\channel_1)\dotand(\channel_2) \cdots \dotand(\channel_n)\dotdo(\delegatekw(P_1\;p_1, \ldots, P_m\;p_m)\{\ldots\});
+\]
+
+Here, the initial argument $\channel_1$ to $\When(\channel_1)$ may be a synchronous or asynchronous channel or an array of asynchronous channels.
+Each subsequent argument  $\channel_i$ to $\And(\channel_i)$ (for $i>1$)  must be an asynchronous channel or an array of asynchronous channels; 
+it cannot be a synchronous channel. The argument \delegate\ to $\Do(\delegate)$ is a \emph{continuation} delegate that defines the body of the pattern.
+Although it varies with the pattern,  the type of the continuation is always an instance of one of the following delegate types:\footnote{
+These are actually nested delegate types:
+\[ 
+\begin{array}{l}
+  \texttt{public delegate } \tvarr\; \dlongreturn{\tvarr}{P_1,\ldots,P_m}(P_1\;p_1, \ldots,  P_m\;p_m );\\
+  \texttt{public delegate void } \dlongreturnvoid{P_1,\ldots,P_m}(P_1\;p_1, \ldots,  P_m\;p_m );\\
+\end{array}
+\]
+so their apparently free type parameters are bound by an enclosing class.}
+
+\[ 
+\begin{array}{l}
+  \texttt{public delegate } \tvarr\; \dreturn{\tvarr}{P_1,\ldots,P_m}(P_1\;p_1, \ldots,  P_m\;p_m );\\
+  \texttt{public delegate void } \dreturnvoid{P_1,\ldots,P_m}(P_1\;p_1, \ldots,  P_m\;p_m );\\
+\end{array}
+\]
+
+The precise type of the continuation \delegate, including its number of arguments, is determined by the sequence of channels guarding it.
+If the first argument $\channel_1$ in the pattern is a synchronous  channel with return type $\tvarr$, then
+the continuation's return type is $\tvarr$; otherwise the return type is $\texttt{void}$.
+
+
+% The pattern's body \delegate\ is a 
+% (returning an \texttt\tvarr), or $\dreturnvoid{P_1,\ldots,P_m}$ (returning  
+% \texttt{void}) depending on whether the head $\channel_1$ is a synchronous channel that returns a result of some type \texttt\tvarr.
+The continuation receives the arguments of the joined channel invocations 
+as delegate parameters $P_1\;p_1, \ldots,  P_m\;p_m$, for $m\leq n$.
+The presence and types of any additional parameters $P_1\;p_1, \ldots,  P_m\;p_m$
+varies according the type of each argument $\channel_i$ joined with 
+invocation $\When(\channel_i)/\And(\channel_i)$ (for $1\leq i\leq n$):
+
+\begin{itemize}
+\item
+If $\channel_i$ is of type $\dsyncR{\tvarr}$, $\dsyncvoid$, $\dasync$ or  $\dasync[]$, then $\When(\channel_i)/\And(\channel_i)$ adds no parameter to delegate \delegate.
+
+\item
+If $\channel_i$ is of type $\dsyncRA{R}{P}$, $\dsyncvoidA{P}$, \\ or $\dasyncA{P}$  for some type $P$ then $\When(\channel_i)/\And(\channel_i)$ 
+adds one parameter $p_j$ of type $P_j=P$ to delegate \delegate.
+
+\item
+If $\channel_i$ is an array of type $\dasyncA{P}[]$ for some type $P$ then $\When(\channel_i)/\And(\channel_i)$ 
+adds one parameter $p_j$ of array type $P_j=P[]$ to delegate \delegate.
+\end{itemize}
+
+Parameters are added to \delegate\ from left to right, in increasing order of 
+$i$. In the current implementation, a continuation can receive at most $m\leq\maxbindings$ parameters. If necessary,
+ it is possible to join more than \maxbindings\ generic channels by calling  method $\AndPair(\channel_i)$ instead of $\And(\channel_i)$. 
+$\And(\channel_i)$  modifies the last argument of the new continuation to be a pair consisting of the last argument
+of the previous continuation and the new argument contributed by $ai$.
+
+
+
+
+A join pattern associates a set of (a)synchronous channels with a body \delegate.
+The body of a pattern can only execute once all the
+channels guarding it have been invoked. Thus, when a channel is 
+invoked there may be zero, one, or more patterns which are enabled:
+\begin{itemize}
+\item
+If no pattern is enabled then the channel invocation is queued up. If the channel is asynchronous,
+then this simply involves adding the arguments (the contents of the message) to an internal queue.
+If the channel is synchronous, then the calling thread is blocked, joining a notional queue of threads waiting on this channel.
+\item
+If there is a single enabled join pattern, then the arguments of the calls involved in the match are de-queued,
+any blocked thread involved in the match is awakened, and the body of the pattern is executed in one of the threads.
+\item
+When a join pattern that involves only asynchronous channels is enabled, then it runs in a new thread.
+If there are several enabled patterns, then an unspecified one is chosen to run.
+\item
+Similarly, if there are multiple invocations of a particular (a)synchronous channel queued up, 
+which call will be de-queued when there is a match is unspecified.
+\end{itemize}
+
+The current number of channels initialized on $\joinobj$ is available as readonly property $\joinobj\dotcount$; 
+its value is bounded by $\joinobj\dotsize$.
+Any invocation of $\joinobj\dotinitialize$ that would cause $\joinobj\dotcount$ to exceed $\joinobj\dotsize$ throws \typeref{JoinException}.
+
+
+Join patterns must be well-formed, both individually and collectively. Executing $\Do(\delegate)$ to
+complete a join pattern will throw \typeref{JoinException} if $\delegate$ is
+\texttt{null}, the pattern repeats an asynchronous channel, an (a)synchronous
+channel is \texttt{null} or \emph{foreign} to this pattern's \cjoin\ instance, the
+join pattern is \emph{redundant}, or the join pattern is \emph{empty}.
+A channel is foreign to a \cjoin\ instance \joinobj\ if it was not allocated by some call to
+$\joinobj\dotinitialize$.
+A pattern is redundant when the set
+of channels joined by the pattern subsets or supersets the channels
+joined by an existing pattern on this \texttt{Join} instance.
+A pattern is empty when the set of channels joined by the pattern is the empty set 
+(emptiness can only arise from joining empty arrays of channels).
+
+
+
+
+
+

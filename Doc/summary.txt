@@ -1,0 +1,21 @@
+Joins - A Concurrency Library 
+
+Comega promised C# programmers a more pleasant world of concurrent
+programming.  Comega had a simple, declarative and powerful model
+of concurrency - Join Patterns - applicable both to multithreaded
+applications and to the orchestration of asynchronous, event-based
+distributed applications.
+
+By exploiting Generics in the Common Language Runtime, we can now
+provide join patterns as a library rather than a language
+feature. Offering a library has some advantages: the library is
+language neutral, supporting C#, VB and other languages; the library's
+join patterns are dynamic, supporting solutions difficult to express
+with the static join patterns of Comega.
+
+The Joins library is efficient and has a simple interface that makes
+it easy to translate Comega programs to C#. The installer includes a
+tutorial, documentation, samples and demos.
+
+
+ 
