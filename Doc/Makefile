@@ -1,10 +1,10 @@
 
 build: 
-    doit.bat
-    copy tutorial.pdf ..\Documentation\Tutorial.pdf
+    REM doit.bat
+    REM copy tutorial.pdf ..\Documentation\Tutorial.pdf
 
 clean: 
-	del /Q /A-R output\*.*
+	REM del /Q /A-R output\*.*
         
 rebuild: clean build
 
