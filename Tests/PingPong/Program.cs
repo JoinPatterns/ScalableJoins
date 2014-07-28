@@ -68,7 +68,7 @@ public class PingPong {
     for(int i=0;i<max;i++) {
       try{
        Thread.Sleep(Timeout.Infinite);
-      } catch (ThreadInterruptedException e) {}
+      } catch (ThreadInterruptedException ) {}
       t2.Interrupt();
       if(i%1000 == 0) {Console.Write(1);}
     }
@@ -80,7 +80,7 @@ public class PingPong {
       t1.Interrupt();
       try{
        Thread.Sleep(Timeout.Infinite);
-      } catch (ThreadInterruptedException e) {}
+      } catch (ThreadInterruptedException ) {}
       if(i%1000 == 0) {Console.Write(2);}
     }
     done();
