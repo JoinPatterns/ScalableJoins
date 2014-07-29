@@ -18,7 +18,7 @@ using System.Threading;
 using Microsoft.Research.Joins;
 using Microsoft.Research.Joins.Patterns;
 using Microsoft.Research.Joins.BitMasks;
-
+using System.Threading.Tasks;
 namespace Microsoft.Research.Joins {
 
 
@@ -169,10 +169,158 @@ namespace Microsoft.Research.Joins.LockBased {
       void Wake();
     }
 
+
+
+    public class Send<R,T> : AbstractSend<R> //huh?
+    {
+        readonly T t;
+        private R result;
+        readonly TaskCompletionSource<R> tcs;
+        readonly SyncTarget<R,T> chan;
+     
+        public override bool IsCompleted
+        {
+            get
+            {
+                Monitor.Enter(chan.mOwner);
+                chan.mValueInQueue = false;
+                if (chan.mOwner.mState.ContainsAll(chan.mSetID))
+                {
+                    return false;
+                }
+                else
+                {
+                    Dictionary<Chord<R>> chords = chan.Chords;
+                    if (chords != null)
+                    {
+                        do
+                        {
+                            chords = chords.mTail;
+                            if (chan.mOwner.mState.ContainsAll(chords.mKey))
+                            {
+                                chan.pValue = t;
+                                result = chords.mValue.FireSync();
+                                return true;
+                            }
+                        } while (chords != chan.Chords);
+                    }
+                    chan.mOwner.mState.AddAll(chan.mSetID);
+                    return false;
+                };
+            }
+        }
+        /*
+         *   public override void OnCompleted(Action Resume)
+        {
+            tcs.Task.ContinueWith(_ => { Resume(); });
+
+            chan.BeginInvoke(this.t, ar =>
+            {
+                try
+                {
+                    while (true)
+                    {
+                        var r = default(R);
+                        chan.mValueInQueue = true;
+                        if (chan.mWaitQ.Yield(t, chan.mOwner, ref r))
+                        {
+                            result = r;
+                            tcs.SetResult(r);
+                            return;
+                        }
+                        Dictionary<Chord<R>> chords = chan.Chords;
+                        if (chords != null)
+                        {
+                            do
+                            {
+                                chords = chords.mTail;
+                                if (chan.mOwner.mState.ContainsAll(chords.mKey))
+                                {
+                                    chan.pValue = t;
+                                    result = chords.mValue.FireSync();
+                                    tcs.SetResult(r);
+                                    return;
+                                }
+                            } while (chords != chan.Chords);
+                        }
+                        chan.mOwner.mState.AddAll(chan.mSetID);
+                    }
+                }
+                catch (Exception e)
+                {
+                    tcs.SetException(e);
+                };
+            },
+            null);
+        }
+         * */
+        public override void OnCompleted(Action Resume)
+        {
+
+            var r = default(R);
+            chan.mValueInQueue = true;
+            Action<bool> k = null;
+            k = done =>
+            {
+                if (done)
+                {
+                    result = r;
+                    Resume();
+                }
+                else
+                {
+                    Monitor.Enter(chan.mOwner);
+                    Dictionary<Chord<R>> chords = chan.Chords;
+                    if (chords != null)
+                    {
+                        do
+                        {
+                            chords = chords.mTail;
+                            if (chan.mOwner.mState.ContainsAll(chords.mKey))
+                            {
+                                chan.pValue = t;
+                                result = chords.mValue.FireSync();
+                                ;
+                                Resume();
+                                return;
+                            }
+                        } while (chords != chan.Chords);
+                    }
+                    chan.mOwner.mState.AddAll(chan.mSetID);
+                    chan.mWaitQ.AsyncYield(t,chan.mOwner, k);
+                };
+               
+            };
+            chan.mWaitQ.AsyncYield(t, chan.mOwner, k);
+            //Monitor.Exit(chan.mOwner);
+          
+        }
+        public Send(SyncTarget<R,T> chan, T t)
+        {
+            this.t = t;
+            this.tcs = new TaskCompletionSource<R>();
+            this.chan = chan;
+
+        }
+        public override R GetResult() { return this.result; }
+
+        public override AbstractSend<R> GetAwaiter()
+        {
+            return this;
+        }
+    }
+
+
+
+       
+
+
     [DebuggerDisplay(SynchronousChannelDisplayString)]
-    internal class SyncTarget<R, A> : Chan<A>, IWakeable, IRegister {
+    internal class SyncTarget<R, A> : Chan<A>, IWakeable, IRegister, IGetAwaiter<R,A> {
+
+      
       private A mValue;
-      private bool mValueInQueue = true;
+      public bool mValueInQueue = true;
       protected internal A pValue {
         get {
           A value = mValue;
@@ -269,6 +417,11 @@ namespace Microsoft.Research.Joins.LockBased {
 
       public override bool IsAsync {
         get { return false; }
+      }
+
+      public AbstractSend<R> GetAwaiter(A t)
+      {
+          return new Send<R,A>(this,t);
       }
     }
 

@@ -221,11 +221,13 @@ namespace Microsoft.Research.Joins.LockBased {
     protected Status mStatus = Status.Pending;
     protected Exception m_exn;
 
+    protected abstract void Schedule();
+    protected abstract void WaitWhilePending();
     internal void WakeUp() {
       lock (this) {
         if (this.mStatus == Status.Pending) {
           this.mStatus = Status.Continue;
-          Monitor.Pulse(this);
+          Schedule();
         }
       }
     }
@@ -234,7 +236,7 @@ namespace Microsoft.Research.Joins.LockBased {
         if (this.mStatus == Status.Pending) {
           this.m_exn = e;
           this.mStatus = Status.Failed;
-          Monitor.Pulse(this);
+          Schedule();
         }
       }
       if (mNext != null) mNext.Fail(e);
@@ -247,14 +249,17 @@ namespace Microsoft.Research.Joins.LockBased {
       waiters = this;
     }
   }
-  internal class Waiter<R> : Waiter  {
+  internal abstract class Waiter<R> : Waiter  {
       private R m_res;
       
       internal bool Wait(ref R res) {
         lock (this) {
+         /* 
           while (mStatus == Status.Pending) {
             Monitor.Wait(this);
           };
+          */
+          WaitWhilePending();
           switch (mStatus) {
             case Status.Done: {
                 res = m_res;
@@ -277,7 +282,7 @@ namespace Microsoft.Research.Joins.LockBased {
             {
                 this.m_res = res;
                 this.mStatus = Status.Done;
-                Monitor.Pulse(this);
+                Schedule();
             }
         }
         if (mNext != null) ((Waiter<R>) mNext).Succeed(res);
@@ -287,13 +292,54 @@ namespace Microsoft.Research.Joins.LockBased {
 
     }
    
-  internal class Waiter<A,R> : Waiter<R> {
+  internal abstract class AbstractWaiter<A,R> : Waiter<R> {
 
      public readonly A m_arg;
-    
 
-     internal Waiter(A arg) {
+     internal AbstractWaiter(A arg) {
        this.m_arg = arg;
+     }
+
+     
+   }
+    internal  class Waiter<A,R> : AbstractWaiter<A,R> {
+
+    
+     protected override void WaitWhilePending()
+     {
+         while (mStatus == Status.Pending)
+         {
+             Monitor.Wait(this);
+         };
+     }
+     protected override void Schedule()
+     {
+         Monitor.Pulse(this);
+     }
+
+     internal Waiter(A arg): base(arg) {
+     }
+
+     
+   }
+    internal  class AsyncWaiter<A,R> : AbstractWaiter<A,R> {
+        Action<bool> k;
+    
+     protected override void WaitWhilePending()
+        {
+#warning: "Async:check me"
+            Debug.Assert(this.mStatus != Status.Pending);
+            return;
+     }
+     protected override void Schedule()
+     {
+#warning: "Async:optimize me"
+         System.Threading.Tasks.Task.Factory.StartNew(() => k(mStatus == Status.Done));
+     }
+
+     internal AsyncWaiter(A arg,Action<bool> k): base(arg) {
+         this.k = k;
+      
      }
 
      
@@ -305,8 +351,8 @@ namespace Microsoft.Research.Joins.LockBased {
     // links to other nodes...
 
 
-    internal System.Collections.Generic.Queue<Waiter<A, R>> mQ
-      = new System.Collections.Generic.Queue<Waiter<A, R>>();
+    internal System.Collections.Generic.Queue<AbstractWaiter<A, R>> mQ
+      = new System.Collections.Generic.Queue<AbstractWaiter<A, R>>();
    
     internal bool Empty { get { return (mQ.Count == 0); } }
     [DebuggerNonUserCode]
@@ -326,7 +372,23 @@ namespace Microsoft.Research.Joins.LockBased {
       var n = mQ.Dequeue();
       n.WakeUp();
     }
-    
+
+
+    internal void AsyncYield( A t, object myCurrentLock, Action<bool> k)
+    {
+        var n = new AsyncWaiter<A, R>(t,k);
+        mQ.Enqueue(n);
+        Monitor.Exit(myCurrentLock);
+        /*
+        var s = n.Wait(ref a.result);
+        if (s) return true;
+        else
+        {
+            Monitor.Enter(myCurrentLock);
+            return false;
+        }
+         * */
+    }
   }
 
 }

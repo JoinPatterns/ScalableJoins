@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-#if true
+#if false
 namespace Microsoft.Research.Joins
 {
     public static class Extensions {

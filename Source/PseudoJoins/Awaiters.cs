@@ -4,9 +4,31 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-#if false
+#if true
 namespace Microsoft.Research.Joins
 {
+
+
+    public interface IGetAwaiter<R, T>
+    {
+
+        AbstractSend<R> GetAwaiter(T t);
+    }
+    public abstract class AbstractSend<R> : System.Runtime.CompilerServices.INotifyCompletion
+    {
+        internal R result;
+
+        public abstract bool IsCompleted { get; }
+
+
+        public abstract void OnCompleted(Action Resume);
+
+        public abstract R GetResult();
+
+        public abstract AbstractSend<R> GetAwaiter();
+
+    };
+
     public static class Extensions {
 
     
@@ -14,16 +36,18 @@ namespace Microsoft.Research.Joins
     public static Synchronous.Send<T> Send<T>(this Synchronous.Channel<T> This, T t)
     {
         return new Synchronous.Send<T>(This,t);
+       
     }
 
-    public static Synchronous.Send Send(this Synchronous.Channel This)
+    public static AbstractSend<Unit> Send(this Synchronous.Channel This)
     {
-        return new Synchronous.Send(This);
+        return ((IGetAwaiter<Unit, Unit>)(This.Target)).GetAwaiter(Unit.Null);
     }
     
-    public static Synchronous<R>.Send<T> Send<R, T>(this Synchronous<R>.Channel<T> This, T t)
+    public static AbstractSend<R> Send<R, T>(this Synchronous<R>.Channel<T> This, T t)
     {
-        return new Synchronous<R>.Send<T>(This, t);
+      //  return new Synchronous<R>.Send<T>(This, t);
+        return ((IGetAwaiter<R, T>)(This.Target)).GetAwaiter(t);
     }
 
     public static Synchronous<R>.Send Send<R>(this Synchronous<R>.Channel This)
