@@ -342,7 +342,7 @@ class Constants
 {
     public const int maxhelpings = 1000000;
     public const float ratio = maxhelpings / 10000;
-    public static int howmany = Math.Max(2, 4 * System.Environment.ProcessorCount - 1);
+    public static int howmany = Math.Max(2, 10 * System.Environment.ProcessorCount - 1);
 
     public const bool sleep = false;
     public const bool animate = false;

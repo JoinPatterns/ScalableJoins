@@ -11,7 +11,7 @@ public class Slide
 
     public static void Main()
     {
-        var n = 2;
+        var n = 3;
          
         var table = Join.Create<Join.LockBased>(2*n);
 
@@ -54,10 +54,12 @@ public class Slide
             var j = k++;
             Action phil = async () =>
             {
-                Console.WriteLine("{0}fuck me",j);
+                Console.WriteLine("{0} phil",j);
+                int l = 0;
                 while (true)
                 {
-                    Console.WriteLine("{0}fuck me", j);
+                    l++;
+                    Console.WriteLine("{0} phil loop {1}", j, l);
                     await Task.Delay(10);
                     await h.Send(); // request to eat  
                 }
