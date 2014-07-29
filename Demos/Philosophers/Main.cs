@@ -23,6 +23,7 @@ using System.Linq;
 
 using System.Threading.Tasks;
 
+/*
 // naive because it doesn't take advantage of the fastpath.
 // Also needs to be a class so that we can capture .result in the delegate.
 public struct Send<T>
@@ -119,7 +120,7 @@ public static class Extension
     }
 
 }
-
+*/
 public class PhilView : Form
 {
 
@@ -600,14 +601,26 @@ public class Slide
         }
         // set the table
         foreach (var fork in forks) fork();
+
         // spawn the philosopher tasks
-        foreach (var sync in hungry)
+        foreach (Synchronous.Channel h in hungry)
         {
-            Action<Synchronous.Channel> phil = async h =>
+            new Thread(obj =>
+            {
+                while (true) h(); // request to eat  
+            }).Start();
+            
+        }
+
+
+        // spawn the philosopher tasks
+        foreach (Synchronous.Channel h in hungry)
+        {
+            Action phil = async () =>
             {
                 while (true) await h.Send(); // request to eat  
             };
-            phil(sync);
+            phil();
         }
     }
 }

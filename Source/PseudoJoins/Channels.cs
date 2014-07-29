@@ -39,7 +39,8 @@ namespace Microsoft.Research.Joins {
   /// Contains nested classes for synchronous channels returning one result of type <c>R</c>.
   /// </summary>
   /// <typeparam name="R"> the return type of nested channel types <c>Channel&lt;A&gt;</c> <c>Channel&lt;A&gt;</c> </typeparam>
-  public static class Synchronous<R> {
+  public static partial class Synchronous<R> {
+
     /// <summary>
     /// A synchronous channel that returns a value of type <c>R</c> and takes one argument of type <c>A</c>. 
     /// <para>
@@ -151,7 +152,7 @@ namespace Microsoft.Research.Joins {
   /// <summary>
   /// Contains nested classes for synchronous channels returning <c>void</c>.
   /// </summary>
-  public static class Synchronous {
+  public static partial class Synchronous {
     /// <summary>
     ///  A synchronous channel that returns void and takes one argument of type <c>A</c>.
     /// <para>

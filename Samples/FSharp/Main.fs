@@ -40,14 +40,14 @@ type Buffer<'a>() =
     member this.Put(a) = send put a
     member this.Get() = signal get
 
-let spawn f = let def = Join.Create()
-              let spawn =  def.async<unit->unit>()
-              def.When(spawn).Do(fun f -> f())
-              spawn.Invoke(f) 
+let spawn  =  let def = Join.Create()
+              let sp =  def.async<unit->unit>()
+              def.When(sp).Do(fun f -> f())
+              fun f  -> sp.Invoke(f) 
 
 let b =  new Buffer<int>()
 
-for i in 1 .. 10 do spawn(fun() -> b.Put(i))
+do spawn(fun() -> for i in 1 .. 10 do b.Put(i))
 
 for i in 1..10 do printf "\n%i" (b.Get())
 
