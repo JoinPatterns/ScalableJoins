@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-#if false
+#if true
 namespace Microsoft.Research.Joins
 {
     public static class Extensions {
 
-    
     
     public static Synchronous.Send<T> Send<T>(this Synchronous.Channel<T> This, T t)
     {

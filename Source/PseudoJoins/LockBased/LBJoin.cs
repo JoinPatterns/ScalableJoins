@@ -228,7 +228,7 @@ namespace Microsoft.Research.Joins.LockBased {
         mOwner.mState.AddAll(mSetID); goto later;
       }
      
-
+     
 
       internal override A Get(ref Waiter waiters) {
         A a = default(A);

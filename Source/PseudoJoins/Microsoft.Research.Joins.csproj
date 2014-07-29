@@ -106,6 +106,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NaiveAwaiters .cs" />
     <Compile Include="Awaiters.cs" />
     <Compile Include="BitMasks.cs" />
     <Compile Include="BoilerPlate.cs" />
