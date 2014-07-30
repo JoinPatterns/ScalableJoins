@@ -7,10 +7,22 @@ using Microsoft.Research.Joins;
 
 public class Slide
 {
+    static async void Test1()
+    {
+        var table = Join.Create<Join.LockBased>();
+        Synchronous.Channel a; table.Initialize(out a);
+        Synchronous.Channel b; table.Initialize(out b);
+        table.When(a).And(b).Do(() => Console.WriteLine("Success - Test 1"));
+        var r = a.Send();
+        b();
+        await r;
 
+
+    }
 
     public static void Main()
     {
+        Test1(); 
         var n = 2;
          
         var table = Join.Create<Join.LockBased>(2*n);
