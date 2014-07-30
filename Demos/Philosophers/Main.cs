@@ -333,11 +333,15 @@ public class PhilView : Form
     {
         this.GoButton.Enabled = false;
         stopwatch.Start();
-        foreach (var sprite in sprites)
-        {
-            var p = sprite as Phil;
-            if (p != null) p.GetALife();
-        }
+        System.Threading.Tasks.Task.Factory.StartNew(
+            () =>
+            {
+                foreach (var sprite in sprites)
+                {
+                    var p = sprite as Phil;
+                    if (p != null) p.GetALife();
+                }
+            });
     }
 
 
@@ -517,7 +521,7 @@ public class Phil : IViewable
    
       public async Task getalifeAsync()
       {
-          Thread.CurrentThread.IsBackground = true;
+          //Thread.CurrentThread.IsBackground = true;
           bool foodleft = true;
           //await Task.Yield();
           while (foodleft)
