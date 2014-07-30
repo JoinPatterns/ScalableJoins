@@ -7,10 +7,11 @@ using Microsoft.Research.Joins;
 
 public class Slide
 {
-    static void AsyncTest(Action test, string s, int timeout, bool shouldDeadlock)
+    static void AsyncTest(Func<Task<int>> test, string s, int timeout, bool shouldDeadlock)
     {
-        var x = Task.Factory.StartNew(test);
+        var x = test();
         x.Wait(timeout);
+
         if(x.IsCompleted)
         {
             Console.WriteLine("Completed test: {0} {1}", s, shouldDeadlock ? "- should deadlock !!" : "");
@@ -21,22 +22,22 @@ public class Slide
         }
 
     }
-    static async void Test1()
+    static async Task<int> Test1()
     {
         Console.WriteLine("Starting test 1");
         var table = Join.Create<Join.LockBased>();
-        Synchronous.Channel a; table.Initialize(out a);
-        Synchronous.Channel b; table.Initialize(out b);
-        table.When(a).And(b).Do(() => Console.WriteLine("Success - Test 1"));
-        for (var i = 0; i < 20; i++)
-        {
-            var r = a.Send();
-            await r;
-            b();
-        }
+        Synchronous.Channel<string> a; table.Initialize(out a);
+        Synchronous.Channel<string> b; table.Initialize(out b);
+        table.When(a).And(b).Do((_a,_b) => Console.WriteLine("Success - Test 1 - {0} - {1}",_a,_b));
+        var r = a.Send("a");
+        await r;
+        Console.WriteLine("Finished Test 1");
+        b("b");
+        Console.WriteLine("Finished Test 1");
+        return 0;
     }
 
-    static async void Test2()
+    static async Task<int> Test2()
     {
         Console.WriteLine("Starting test 2");
         var table = Join.Create<Join.LockBased>();
@@ -46,6 +47,7 @@ public class Slide
         var r = a.Send();
         b();
         await r;
+        return 1;
     }
 
     public static void Main()
