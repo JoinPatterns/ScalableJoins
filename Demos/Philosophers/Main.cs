@@ -239,8 +239,8 @@ public class PhilView : Form
     [STAThread]
     public static void Main(string[] args)
     {
-        Application.Run(new PhilView(false,false));
-        return;
+     //   Application.Run(new PhilView(false,false));
+     //   return;
         if (args.Length == 0)
         {
             var thisexe = new System.Uri(System.Reflection.Assembly.GetEntryAssembly().CodeBase).LocalPath;
@@ -333,21 +333,24 @@ public class PhilView : Form
     {
         this.GoButton.Enabled = false;
         stopwatch.Start();
-        foreach (var sprite in sprites)
-        {
-            var p = sprite as Phil;
-            if (p != null) p.GetALife();
-        }
-        this.Table.SetTable();
+        System.Threading.Tasks.Task.Factory.StartNew(
+            () =>
+            {
+                foreach (var sprite in sprites)
+                {
+                    var p = sprite as Phil;
+                    if (p != null) p.GetALife();
+                }
+            });
     }
 
 
 }
 class Constants
 {
-    public const int maxhelpings = 10000000;
+    public const int maxhelpings = 100000;
     public const float ratio = maxhelpings / 10000;
-    public static int howmany = Math.Max(2, 4 * System.Environment.ProcessorCount - 1);
+    public static int howmany = Math.Max(2, 100 * System.Environment.ProcessorCount - 1);
 
     public const bool sleep = false;
     public const bool animate = false;
@@ -415,15 +418,9 @@ public class Table
             stopwatch.Stop()
         );
 
-        
-       
-
-    }
-
-    internal void SetTable()
-    {
         // set the table
         foreach (var Fork in Forks) Fork();
+
     }
 }
 
@@ -524,12 +521,12 @@ public class Phil : IViewable
    
       public async Task getalifeAsync()
       {
-          Thread.CurrentThread.IsBackground = true;
+          //Thread.CurrentThread.IsBackground = true;
           bool foodleft = true;
-          await Task.Yield();
+          //await Task.Yield();
           while (foodleft)
           {
-              if (rg.Next(10) < 11) await Task.Yield(); // Review me!
+              await Task.Yield(); // Review me!
               if (Constants.sleep) Thread.Sleep(rg.Next(3000) + 1000);
               foodleft = await(Table.Hungry[id].Send(() =>
               {
