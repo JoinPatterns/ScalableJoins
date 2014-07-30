@@ -217,9 +217,9 @@ namespace Microsoft.Research.Joins.LockBased {
   */
 
   internal abstract class Waiter {
-    protected enum Status { Pending, Done, Failed, Continue }
-    protected Status mStatus = Status.Pending;
-    protected Exception m_exn;
+    internal enum Status { Pending, Done, Failed, Continue }
+    internal Status mStatus = Status.Pending;
+    internal Exception m_exn;
 
     protected abstract void Schedule();
     protected abstract void WaitWhilePending();
@@ -250,7 +250,7 @@ namespace Microsoft.Research.Joins.LockBased {
     }
   }
   internal abstract class Waiter<R> : Waiter  {
-      private R m_res;
+      internal R m_res;
       
       internal bool Wait(ref R res) {
         lock (this) {
@@ -328,7 +328,7 @@ namespace Microsoft.Research.Joins.LockBased {
      
    }
     internal  class AsyncWaiter<A,R> : AbstractWaiter<A,R> {
-        Action<bool> k;
+        Action<bool, Waiter<R>> k;
     
      protected override void WaitWhilePending()
         {
@@ -340,13 +340,13 @@ namespace Microsoft.Research.Joins.LockBased {
      {
 #warning: "Async:optimize me"
          Debug.Assert(this.mStatus != Status.Pending);
-         System.Threading.Tasks.Task.Factory.StartNew(() => k(mStatus != Status.Continue));
+         System.Threading.Tasks.Task.Factory.StartNew(() => k(mStatus != Status.Continue,this));
          //Run()
      }
 
-     internal AsyncWaiter(A arg,Action<bool> k): base(arg) {
+     internal AsyncWaiter(A arg,Action<bool,Waiter<R>> k): base(arg) {
          this.k = k;
-      
+        
      }
 
      
@@ -381,7 +381,7 @@ namespace Microsoft.Research.Joins.LockBased {
     }
 
 
-    internal void AsyncYield( A t, object myCurrentLock, Action<bool> k)
+    internal void AsyncYield( A t, object myCurrentLock, Action<bool,Waiter<R>> k)
     {
         var n = new AsyncWaiter<A, R>(t,k);
         mQ.Enqueue(n);

@@ -265,12 +265,17 @@ namespace Microsoft.Research.Joins.LockBased {
 
             var r = default(R);
             chan.mValueInQueue = true;
-            Action<bool> k = null;
-            k = done =>
+            Action<bool,Waiter<R>> k = null;
+            k = (done,w) =>
             {
                 if (done)
                 {
-                    result = r;
+                    if (w.mStatus == Waiter.Status.Done)
+                    { result = w.m_res; }
+                    else
+                    {
+                       Debug.Assert(w.mStatus == Waiter.Status.Failed);
+                       this.exn = w.m_exn; }
                     Resume();
                 }
                 else

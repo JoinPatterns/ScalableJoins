@@ -345,8 +345,8 @@ namespace Boids {
       }
     }
 
-
-    private void CaseStart() {
+    
+    private void CaseStart2() {
       System.Threading.Thread.CurrentThread.IsBackground = true;
 
       var data = MainWindow.Boids[Index](new Data(position, velocity));
@@ -359,7 +359,23 @@ namespace Boids {
         data = MainWindow.Boids[Index](new Data(position, velocity));
       }
     }
+  
+    private async void CaseStart()
+    {
+        //System.Threading.Thread.CurrentThread.IsBackground = true;
 
+        var data = await  MainWindow.Boids[Index].Send(new Data(position, velocity));
+        while (true)
+        {
+            for (int i = 0; i < NumBoids; i++)
+            {
+                if (MainWindow.AddContentionChecked) await(MainWindow.Sync[Index].Send());
+                if (Index != i) ProcessBoid(data[i]);
+            };
+            Update();
+            data = await (MainWindow.Boids[Index].Send(new Data(position, velocity)));
+        }
+    }
  
     public void CaseToggle() {
       if (Attraction == 1.0) {
@@ -406,10 +422,11 @@ namespace Boids {
 
     [STAThread]
     static void Main(string[] args) {
-
+/*
+ 
       if (args.Length == 0) {
         var thisexe = new System.Uri(System.Reflection.Assembly.GetEntryAssembly().CodeBase).LocalPath;
-        var arguments = new string[] { "/L", "/S" };
+        var arguments = new string[] { "/L" , "/S"  };
         var procs =
         arguments.Select(arg => {
           var psi = new ProcessStartInfo(thisexe, arg);
@@ -425,7 +442,7 @@ namespace Boids {
         }
         return;
       } 
-
+*/
 
       App app = new App();
       app.MainWindow = new MainWindow();

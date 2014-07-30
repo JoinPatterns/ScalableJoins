@@ -83,7 +83,12 @@ let Stacks<'a> n : stack<'a>[] =  // allocates n proxies to a concurrent stack
 // 8 threads, 8 local queues, 10 initial local push, then 100,000 random pop/push
 
 let fork (f: int -> unit) x = 
-  let t = new System.Threading.Thread(fun () -> f x) 
+  let t = new System.Threading.Thread(fun () ->
+   System.Threading.Thread.BeginThreadAffinity()
+   let tid = System.Threading.Thread.CurrentThread;
+   //tid.ProcessorAffinity <- new IntPtr(0);
+   f x
+   System.Threading.Thread.EndThreadAffinity()) 
   t.Start()
   t
 let wait (t: System.Threading.Thread) () = t.Join() 
@@ -108,7 +113,7 @@ let workload caption length stacks =
   printfn "%s %12d" caption timer.ElapsedMilliseconds
 
 do 
-  for breadth = 1 to 16 do
+  for breadth = 1 to 64 do
     let size = 10000000 
     let length = size / breadth
     printfn "processing %d calls on %d threads (runtime in mS)" size breadth

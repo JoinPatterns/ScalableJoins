@@ -14,17 +14,22 @@ namespace Microsoft.Research.Joins
         AbstractSend<R> GetAwaiter(T t);
     }
 
-    public abstract class AbstractSend: System.Runtime.CompilerServices.INotifyCompletion
+    public abstract class AbstractSend : System.Runtime.CompilerServices.INotifyCompletion, System.Runtime.CompilerServices.ICriticalNotifyCompletion
     {
         protected System.Exception exn;
         public abstract bool IsCompleted { get; }
 
         public abstract void OnCompleted(Action Resume);
+        
+        [System.Security.SecurityCritical]
+        public void UnsafeOnCompleted(Action Resume) { this.OnCompleted(Resume); }
 
         public void GetResult() { if (exn != null) throw exn; return; }
 
         public  AbstractSend GetAwaiter() { return this; }
 
+
+      
     };
     public abstract class AbstractSend<R> :  AbstractSend
     {
