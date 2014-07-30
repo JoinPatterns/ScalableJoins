@@ -139,7 +139,7 @@ public class PhilView : Form
     Bitmap offscreen = new Bitmap(bmpSize, bmpSize);
 
 
-    public PhilView(bool scalable)
+    public PhilView(bool scalable,bool synchronous)
     {
 
         this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
@@ -152,10 +152,11 @@ public class PhilView : Form
         g.Clear(Color.Black);
 
         Text = (scalable) ? "SCALABLE" : "LOCKBASED";
+        Text += (synchronous) ? " SYNC": " ASYNC";
 
         var howmany = Constants.howmany;
 
-        Table = new Table(howmany, stopwatch, scalable);
+        Table = new Table(howmany, stopwatch, scalable,synchronous);
 
         sprites = new IViewable[2 * howmany];
 
@@ -238,12 +239,12 @@ public class PhilView : Form
     [STAThread]
     public static void Main(string[] args)
     {
-        Application.Run(new PhilView(false));
-        return;
+     //   Application.Run(new PhilView(false,false));
+     //   return;
         if (args.Length == 0)
         {
             var thisexe = new System.Uri(System.Reflection.Assembly.GetEntryAssembly().CodeBase).LocalPath;
-            var arguments = new string[] { "/L", "/S" };
+            var arguments = new string[] { "/L /a", "/L /s", "/S /s" };
             var procs =
             arguments.Select(arg =>
             {
@@ -262,16 +263,19 @@ public class PhilView : Form
             return;
         }
         bool SCALABLE = false;
+        bool SYNCHRONOUS = false;
         if (args.Length > 0)
         {
             foreach (var arg in args)
             {
                 if (arg == "/S") SCALABLE = true;
                 if (arg == "/L") SCALABLE = false;
+                if (arg == "/s") SYNCHRONOUS = true;
+                if (arg == "/a") SYNCHRONOUS = false;
             };
 
 
-            Application.Run(new PhilView(SCALABLE));
+            Application.Run(new PhilView(SCALABLE,SYNCHRONOUS));
 
         }
     }
@@ -340,12 +344,13 @@ public class PhilView : Form
 }
 class Constants
 {
-    public const int maxhelpings = 1000000;
+    public const int maxhelpings = 100000;
     public const float ratio = maxhelpings / 10000;
-    public static int howmany = Math.Max(2, 10 * System.Environment.ProcessorCount - 1);
+    public static int howmany = Math.Max(2, 100 * System.Environment.ProcessorCount - 1);
 
     public const bool sleep = false;
     public const bool animate = false;
+    public bool scalable = false;
 
 
 }
@@ -364,9 +369,12 @@ public class Table
 
 
     public volatile static int helpings = Constants.maxhelpings;
-
-    public Table(int size, Stopwatch stopwatch, bool scalable)
+    public readonly bool synchronous;
+    public readonly bool scalable;
+    public Table(int size, Stopwatch stopwatch, bool scalable, bool synchronous)
     {
+        this.synchronous = synchronous;
+        this.scalable = scalable;
         ForkFree = new bool[size];
 
         Join j = (scalable) ?
@@ -472,7 +480,10 @@ public class Phil : IViewable
         Join j = Join.Create(1);
         j.Initialize(out GetALife);
 
-        j.When(GetALife).Do(getalife);
+        if (Table.synchronous)
+            j.When(GetALife).Do(getalifeSync);
+        else
+            GetALife = () => ThreadPool.QueueUserWorkItem(async _ => { await Task.Yield(); await (getalifeAsync()); });
 
         rg = new Random(id); /* each phil get its own (thread unsafe) rg */
         pos = maxpos;
@@ -480,9 +491,9 @@ public class Phil : IViewable
 
     }
 
-    /*
+    
 
-    private void getalife()
+    private void getalifeSync()
     {
         Thread.CurrentThread.IsBackground = true;
         bool foodleft = true;
@@ -493,35 +504,37 @@ public class Phil : IViewable
             {
                 helpings++;
                 state = State.Eating;
-                Thread.SpinWait(10000);
+              //  Thread.SpinWait(10000);
             });
             state = State.Thinking;
-            Thread.SpinWait(10000);
+            //Thread.SpinWait(10000);
             if (Constants.sleep) Thread.Sleep(rg.Next(3000) + 2000);
         }
         Table.Done[id]();
     }
-    */
+    
 
    
-      public async void getalife()
+      public async Task getalifeAsync()
       {
           Thread.CurrentThread.IsBackground = true;
           bool foodleft = true;
+          //await Task.Yield();
           while (foodleft)
           {
+              await Task.Yield(); // Review me!
               if (Constants.sleep) Thread.Sleep(rg.Next(3000) + 1000);
               foodleft = await(Table.Hungry[id].Send(() =>
               {
                   helpings++;
                   state = State.Eating;
-               //   Thread.SpinWait(10000);
+                  //Thread.SpinWait(10000);
               }));
               state = State.Thinking;
               //Thread.SpinWait(10000);
               if (Constants.sleep) Thread.Sleep(rg.Next(3000) + 2000);
           }
-          Table.Done[id]();
+          await Table.Done[id].Send();
      
      
       }
@@ -571,10 +584,5 @@ public class Helper
 }
 
 
-public static class X
-{
 
-    public static Task Send(this Synchronous.Channel c) { while (true) { ;} }
-
-}
 

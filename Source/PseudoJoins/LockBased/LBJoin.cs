@@ -174,8 +174,7 @@ namespace Microsoft.Research.Joins.LockBased {
     public class Send<R,T> : AbstractSend<R> //huh?
     {
         readonly T t;
-        private R result;
-        readonly TaskCompletionSource<R> tcs;
+      
         readonly SyncTarget<R,T> chan;
      
         public override bool IsCompleted
@@ -199,7 +198,14 @@ namespace Microsoft.Research.Joins.LockBased {
                             if (chan.mOwner.mState.ContainsAll(chords.mKey))
                             {
                                 chan.pValue = t;
-                                result = chords.mValue.FireSync();
+                                try
+                                {
+                                    result = chords.mValue.FireSync();
+                                }
+                                catch (System.Exception e)
+                                {
+                                    this.exn = e;
+                                }
                                 return true;
                             }
                         } while (chords != chan.Chords);
@@ -279,8 +285,14 @@ namespace Microsoft.Research.Joins.LockBased {
                             if (chan.mOwner.mState.ContainsAll(chords.mKey))
                             {
                                 chan.pValue = t;
-                                result = chords.mValue.FireSync();
-                                ;
+                                try
+                                {
+                                    result = chords.mValue.FireSync();
+                                }
+                                catch (System.Exception e)
+                                {
+                                    this.exn = e;
+                                }
                                 Resume();
                                 return;
                             }
@@ -298,16 +310,18 @@ namespace Microsoft.Research.Joins.LockBased {
         public Send(SyncTarget<R,T> chan, T t)
         {
             this.t = t;
-            this.tcs = new TaskCompletionSource<R>();
             this.chan = chan;
-
         }
-        public override R GetResult() { return this.result; }
 
-        public override AbstractSend<R> GetAwaiter()
+        /*
+        public override AbstractSend GetAwaiter()
         {
             return this;
         }
+        public override AbstractSend<R> GetAwaiter()
+        {
+            return this;
+        }*/
     }
 
 

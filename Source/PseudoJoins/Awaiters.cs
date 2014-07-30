@@ -11,51 +11,67 @@ namespace Microsoft.Research.Joins
 
     public interface IGetAwaiter<R, T>
     {
-
         AbstractSend<R> GetAwaiter(T t);
     }
-    public abstract class AbstractSend<R> : System.Runtime.CompilerServices.INotifyCompletion
+
+    public abstract class AbstractSend: System.Runtime.CompilerServices.INotifyCompletion
     {
-        internal R result;
-
+        protected System.Exception exn;
         public abstract bool IsCompleted { get; }
-
 
         public abstract void OnCompleted(Action Resume);
 
-        public abstract R GetResult();
+        public void GetResult() { if (exn != null) throw exn; return; }
 
-        public abstract AbstractSend<R> GetAwaiter();
+        public  AbstractSend GetAwaiter() { return this; }
+
+    };
+    public abstract class AbstractSend<R> :  AbstractSend
+    {
+        protected R result;
+
+       // public abstract bool IsCompleted { get; }
+
+
+       // public abstract void OnCompleted(Action Resume);
+
+       // public abstract R GetResult();
+
+        public new AbstractSend<R> GetAwaiter() { return this; }
+
+        public new R GetResult() { if (exn != null) throw exn; return result; }
 
     };
 
     public static class Extensions {
 
-    
-    
-    public static Synchronous.Send<T> Send<T>(this Synchronous.Channel<T> This, T t)
+
+
+    public static AbstractSend Send<T>(this Synchronous.Channel<T> This, T t)
     {
-        return new Synchronous.Send<T>(This,t);
+        return ((IGetAwaiter<Unit, T>)(This.Target)).GetAwaiter(t);
        
     }
 
-    public static AbstractSend<Unit> Send(this Synchronous.Channel This)
+    public static AbstractSend Send(this Synchronous.Channel This)
     {
+        
         return ((IGetAwaiter<Unit, Unit>)(This.Target)).GetAwaiter(Unit.Null);
     }
     
     public static AbstractSend<R> Send<R, T>(this Synchronous<R>.Channel<T> This, T t)
     {
-      //  return new Synchronous<R>.Send<T>(This, t);
         return ((IGetAwaiter<R, T>)(This.Target)).GetAwaiter(t);
     }
 
-    public static Synchronous<R>.Send Send<R>(this Synchronous<R>.Channel This)
+    public static AbstractSend<R> Send<R>(this Synchronous<R>.Channel This)
     {
-        return new Synchronous<R>.Send(This);
+        return ((IGetAwaiter<R, Unit>)(This.Target)).GetAwaiter(Unit.Null);
     }
 
 }
+
+#if false
     public static partial class Synchronous<R> {
 
         
@@ -242,5 +258,6 @@ namespace Microsoft.Research.Joins
 
 
     }
+#endif
 }
 #endif

@@ -261,6 +261,11 @@ namespace Microsoft.Research.Joins.LockBased {
           */
           WaitWhilePending();
           switch (mStatus) {
+            case Status.Pending:
+                  {
+                      Debug.Assert(false);
+                      throw new System.Exception();
+                  }
             case Status.Done: {
                 res = m_res;
                 return true;
@@ -334,7 +339,9 @@ namespace Microsoft.Research.Joins.LockBased {
      protected override void Schedule()
      {
 #warning: "Async:optimize me"
-         System.Threading.Tasks.Task.Factory.StartNew(() => k(mStatus == Status.Done));
+         Debug.Assert(this.mStatus != Status.Pending);
+         System.Threading.Tasks.Task.Factory.StartNew(() => k(mStatus != Status.Continue));
+         //Run()
      }
 
      internal AsyncWaiter(A arg,Action<bool> k): base(arg) {
