@@ -7,12 +7,15 @@ using Microsoft.Research.Joins;
 
 public class Slide
 {
+    static bool WaitCompleted(Task x, int timeout)
+    {
+        x.Wait(timeout);
+        return x.IsCompleted;
+    }
     static void AsyncTest(Func<Task<int>> test, string s, int timeout, bool shouldDeadlock)
     {
-        var x = test();
-        x.Wait(timeout);
-
-        if(x.IsCompleted)
+        var x = System.Threading.Tasks.Task.Factory.StartNew(test);
+        if(WaitCompleted(x,timeout) && WaitCompleted(x.Result,timeout))
         {
             Console.WriteLine("Completed test: {0} {1}", s, shouldDeadlock ? "- should deadlock !!" : "");
         }
@@ -49,6 +52,8 @@ public class Slide
         await r;
         return 1;
     }
+
+    //TODO: Add some more tests.
 
     public static void Main()
     {
