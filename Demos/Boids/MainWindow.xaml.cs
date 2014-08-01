@@ -25,7 +25,7 @@ namespace Boids {
   public partial class MainWindow : Window {
 
 
-    public const int NumBoids = 200;
+    public const int NumBoids = 400;
     
     public Synchronous<Data[]>.Channel<Data>[] Boids;
     private ModelVisual3D[] BoidModels;
@@ -57,6 +57,7 @@ namespace Boids {
 
 
     public static bool SCALABLE = false;
+    public static bool SYNCHRONOUS = true;
 
     public MainWindow() {
       var args = System.Environment.GetCommandLineArgs();
@@ -64,10 +65,12 @@ namespace Boids {
             foreach (var arg in args)
             {
                 if (arg == "/S") SCALABLE = true;
+                if (arg == "/A") SYNCHRONOUS = false;
             };
 
       this.Title = (SCALABLE) ? "SCALABLE" : "LOCKBASED";
-      
+
+      this.Title += (SYNCHRONOUS) ? " SYNCHRONOUS" : " ASYNCHRONOUS";
       BoidModels = new ModelVisual3D[NumBoids];
       Timer = new DispatcherTimer();
       boids = new Boid[NumBoids];
@@ -279,7 +282,10 @@ namespace Boids {
       j.Initialize(out Start);
       j.Initialize(out Toggle);
       j.Initialize(out Lock);
-      j.When(Start).Do(CaseStart);
+      if (MainWindow.SYNCHRONOUS) 
+          j.When(Start).Do(CaseStartSync);
+      else
+          j.When(Start).Do(CaseStartAsync);
       j.When(Toggle).And(Lock).Do(CaseToggle);
       Lock();
  
@@ -346,7 +352,7 @@ namespace Boids {
     }
 
     
-    private void CaseStart2() {
+    private void CaseStartSync() {
       System.Threading.Thread.CurrentThread.IsBackground = true;
 
       var data = MainWindow.Boids[Index](new Data(position, velocity));
@@ -360,7 +366,7 @@ namespace Boids {
       }
     }
   
-    private async void CaseStart()
+    private async void CaseStartAsync()
     {
         //System.Threading.Thread.CurrentThread.IsBackground = true;
 
@@ -422,11 +428,9 @@ namespace Boids {
 
     [STAThread]
     static void Main(string[] args) {
-/*
- 
-      if (args.Length == 0) {
+    if (args.Length == 0) {
         var thisexe = new System.Uri(System.Reflection.Assembly.GetEntryAssembly().CodeBase).LocalPath;
-        var arguments = new string[] { "/L" , "/S"  };
+        var arguments = new string[] { "/L" , "/S" , "/A" };
         var procs =
         arguments.Select(arg => {
           var psi = new ProcessStartInfo(thisexe, arg);
@@ -442,7 +446,6 @@ namespace Boids {
         }
         return;
       } 
-*/
 
       App app = new App();
       app.MainWindow = new MainWindow();
