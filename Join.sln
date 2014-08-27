@@ -801,7 +801,7 @@ Global
 		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Dev|Win32.ActiveCfg = Debug|x86
 		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Dev|x86.ActiveCfg = Debug|x86
 		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Dev|x86.Build.0 = Debug|x86
-		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Documentation|Any CPU.ActiveCfg = Debug|x86
+		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
 		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Documentation|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Documentation|Mixed Platforms.Build.0 = Debug|Any CPU
 		{6337EF76-989D-4F38-8CE9-691D87CF428C}.Documentation|Win32.ActiveCfg = Debug|x86
@@ -834,6 +834,7 @@ Global
 		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Dev|Win32.Build.0 = Debug|Win32
 		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Dev|x86.ActiveCfg = Debug|Win32
 		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Documentation|Any CPU.ActiveCfg = Debug|Win32
+		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Documentation|Any CPU.Build.0 = Debug|Win32
 		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Documentation|Mixed Platforms.ActiveCfg = Debug|Win32
 		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Documentation|Mixed Platforms.Build.0 = Debug|Win32
 		{FBAE5100-910D-42C2-AD0F-86211D463F84}.Documentation|Win32.ActiveCfg = Debug|Win32
@@ -865,7 +866,7 @@ Global
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Dev|Win32.ActiveCfg = Debug|x86
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Dev|x86.ActiveCfg = Debug|x86
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Dev|x86.Build.0 = Debug|x86
-		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Documentation|Any CPU.ActiveCfg = Debug|x86
+		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Documentation|Mixed Platforms.ActiveCfg = Debug|x86
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Documentation|Mixed Platforms.Build.0 = Debug|x86
 		{43FC033E-9AA9-4C4C-971F-0D120B7B399C}.Documentation|Win32.ActiveCfg = Debug|x86
@@ -898,7 +899,7 @@ Global
 		{484E6EEE-3D70-483B-A239-1167A0C88307}.Dev|Win32.ActiveCfg = Debug|x86
 		{484E6EEE-3D70-483B-A239-1167A0C88307}.Dev|x86.ActiveCfg = Debug|x86
 		{484E6EEE-3D70-483B-A239-1167A0C88307}.Dev|x86.Build.0 = Debug|x86
-		{484E6EEE-3D70-483B-A239-1167A0C88307}.Documentation|Any CPU.ActiveCfg = Debug|x86
+		{484E6EEE-3D70-483B-A239-1167A0C88307}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
 		{484E6EEE-3D70-483B-A239-1167A0C88307}.Documentation|Mixed Platforms.ActiveCfg = Debug|x86
 		{484E6EEE-3D70-483B-A239-1167A0C88307}.Documentation|Mixed Platforms.Build.0 = Debug|x86
 		{484E6EEE-3D70-483B-A239-1167A0C88307}.Documentation|Win32.ActiveCfg = Debug|x86
