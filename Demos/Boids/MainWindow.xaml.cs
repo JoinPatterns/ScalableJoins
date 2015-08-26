@@ -25,7 +25,7 @@ namespace Boids {
   public partial class MainWindow : Window {
 
 
-    public const int NumBoids = 400;
+    public const int NumBoids = 200;
     
     public Synchronous<Data[]>.Channel<Data>[] Boids;
     private ModelVisual3D[] BoidModels;
@@ -135,8 +135,7 @@ namespace Boids {
       }
       // rendezvous pattern
       join.When(Tick).And(Running).And(Boids).Do(data => { Running(); return data; });
-
-      // rendezvous pattern
+      
       join.When(PauseResume).And(Running).Do(() => NotRunning());
       join.When(PauseResume).And(NotRunning).Do(() => { ResetStats(); Running(); });
       Running();
@@ -368,8 +367,6 @@ namespace Boids {
   
     private async void CaseStartAsync()
     {
-        //System.Threading.Thread.CurrentThread.IsBackground = true;
-
         var data = await  MainWindow.Boids[Index].Send(new Data(position, velocity));
         while (true)
         {

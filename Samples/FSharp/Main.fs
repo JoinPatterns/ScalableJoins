@@ -125,7 +125,7 @@ do
   ()
 
  
- (*
+
  // other examples in F# 
 
 let buffer<'a>() =
@@ -208,19 +208,17 @@ let exchange<'a,'b>() =
      (fun b -> fst (send right b))
 
 
-let Barrier(n) =
-    let def = Join.Create(n)
-    let chans = [|for i in 1..n -> def.sync() |]
-    let (Some pat) = 
-        chans |> Array.fold(fun p c  -> match p with None -> Some (def.When(c)) | Some p -> Some(p.And(c))) None 
-    pat.Do(fun()-> ())
-    chans
 
-let Barrier'(n) =
+
+
+let Barrier(n) =
     let def = Join.Create(n)
     let chans = [|for i in 1..n -> def.sync() |]
     def.When(chans).Do(fun () -> ())
     chans
+
+
+
 
 (* TBC - see Scalable Joins paper
 let TreeBarrier'(n) =
@@ -242,10 +240,10 @@ ps |> Array.iteri (fun i p -> spawn (life i))
 do System.Console.ReadKey()
  
 
-let fork (p:Synchronous.Channel) = spawn (fun () -> signal p)
+
 
 let phils5() =
-  
+  let fork (p:Synchronous.Channel) = spawn (fun () -> signal p)
   let def = Join.Create()
   
   let [| f1;f2;f3;f4;f5 |] = [|for i in 1..5 -> def.async() |]
@@ -260,4 +258,3 @@ let phils5() =
   signal f1;signal f2; signal f3; signal f4;signal f5
   fork p1; fork p2; fork p3; fork p4
   
-*)
