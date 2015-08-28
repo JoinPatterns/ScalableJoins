@@ -253,7 +253,6 @@ public class Phil : IViewable {
 } 
 
 public class PhilView : Form {
-  private static Bitmap spagbmp = Helper.LoadBitmap("spaghetti.gif");
   private DateTime lastRepaint = DateTime.Now;
   private System.Windows.Forms.Timer timer;
   private IViewable[] sprites;
@@ -309,7 +308,7 @@ public class PhilView : Form {
         g.Clear(Color.AliceBlue);
         g.TranslateTransform(halfSize, halfSize);
         g.FillEllipse(Brushes.DarkSlateBlue, - tableRadius, - tableRadius, tableRadius*2, tableRadius*2);
-        g.DrawImageUnscaled(spagbmp, -55,-25);
+        
 
         foreach (IViewable sprite in sprites) {
             sprite.Redraw(delta, g);
